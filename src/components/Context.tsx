@@ -1,5 +1,9 @@
 import React, { useContext, useState, useEffect } from "react";
+import { useAsync } from "react-async-hook";
+import * as anchor from "@project-serum/anchor";
+import { Provider } from "@project-serum/anchor";
 import { Swap as SwapClient } from "@project-serum/swap";
+import { Market, OpenOrders } from "@project-serum/serum";
 import { PublicKey, Account } from "@solana/web3.js";
 import {
   AccountInfo as TokenAccount,
@@ -17,6 +21,7 @@ export const USDC_MINT = new PublicKey(
 export const USDT_MINT = new PublicKey(
   "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
 );
+const DEX_PID = new PublicKey("9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin");
 
 const SwapContext = React.createContext<null | SwapContext>(null);
 
@@ -30,7 +35,6 @@ export function SwapContextProvider(props: any) {
   const [toBalance, setToBalance] = useState(undefined);
   const [minExpectedAmount, setMinExpectedAmount] = useState(0);
   const [ownedTokenAccounts, setOwnedTokenAccounts] = useState(undefined);
-  const [mintCache, setMintCache] = useState(new Map<string, MintInfo>());
 
   // Fetch all the owned token accounts for the wallet.
   useEffect(() => {
@@ -42,51 +46,6 @@ export function SwapContextProvider(props: any) {
     swapClient.program.provider.wallet.publicKey,
     swapClient.program.provider.connection,
   ]);
-
-  // Fetch the mint account infos not already in the cache.
-  useEffect(() => {
-    const fromMintClient = new Token(
-      swapClient.program.provider.connection,
-      fromMint,
-      TOKEN_PROGRAM_ID,
-      new Account()
-    );
-    const toMintClient = new Token(
-      swapClient.program.provider.connection,
-      toMint,
-      TOKEN_PROGRAM_ID,
-      new Account()
-    );
-
-    let promises = [];
-    if (mintCache.get(fromMint.toString())) {
-      promises.push(
-        (async (): Promise<MintInfo> => {
-          return mintCache.get(fromMint.toString()) as MintInfo;
-        })()
-      );
-    } else {
-      promises.push(fromMintClient.getMintInfo());
-    }
-    if (mintCache.get(toMint.toString())) {
-      promises.push(
-        (async (): Promise<MintInfo> => {
-          return mintCache.get(toMint.toString()) as MintInfo;
-        })()
-      );
-    } else {
-      promises.push(toMintClient.getMintInfo());
-    }
-
-    Promise.all(promises as [Promise<MintInfo>, Promise<MintInfo>]).then(
-      ([fromMintInfo, toMintInfo]: [MintInfo, MintInfo]) => {
-        let cache = new Map(mintCache);
-        cache.set(fromMint.toString(), fromMintInfo);
-        cache.set(toMint.toString(), toMintInfo);
-        setMintCache(cache);
-      }
-    );
-  }, [fromMint, toMint]);
 
   const swapToFromMints = () => {
     const oldFrom = fromMint;
@@ -116,7 +75,6 @@ export function SwapContextProvider(props: any) {
         fromBalance,
         toBalance,
         ownedTokenAccounts,
-        mintCache,
       }}
     >
       {props.children}
@@ -151,7 +109,6 @@ export type SwapContext = {
   ownedTokenAccounts:
     | { publicKey: PublicKey; account: TokenAccount }[]
     | undefined;
-  mintCache: Map<string, MintInfo>;
 };
 
 const TokenListContext = React.createContext<null | TokenListContext>(null);
@@ -207,10 +164,154 @@ export function useOwnedTokenAccount(
   return tokenAccounts[0];
 }
 
-export function useMintAccount(mint: PublicKey): MintInfo | undefined {
-  const ctx = useContext(SwapContext);
+const MintContext = React.createContext<null | MintContext>(null);
+type MintContext = {
+  mintCache: Map<string, MintInfo>;
+  setMintCache: (m: Map<string, MintInfo>) => void;
+  provider: Provider;
+};
+
+export function MintContextProvider(props: any) {
+  const provider = props.provider;
+  const [mintCache, setMintCache] = useState(new Map<string, MintInfo>());
+
+  return (
+    <MintContext.Provider
+      value={{
+        mintCache,
+        setMintCache,
+        provider,
+      }}
+    >
+      {props.children}
+    </MintContext.Provider>
+  );
+}
+
+export function useMint(mint: PublicKey): MintInfo | undefined | null {
+  const ctx = useContext(MintContext);
+  if (ctx === null) {
+    throw new Error("Mint context not found");
+  }
+
+  // Lazy load the mint account if needeed.
+  const asyncMintInfo = useAsync(async () => {
+    if (ctx.mintCache.get(mint.toString())) {
+      return ctx.mintCache.get(mint.toString());
+    }
+    const mintClient = new Token(
+      ctx.provider.connection,
+      mint,
+      TOKEN_PROGRAM_ID,
+      new Account()
+    );
+    const mintInfo = await mintClient.getMintInfo();
+
+    let cache = new Map(ctx.mintCache);
+    cache.set(mint.toString(), mintInfo);
+    ctx.setMintCache(cache);
+
+    return mintInfo;
+  }, [ctx.provider.connection, mint]);
+
+  if (asyncMintInfo.result) {
+    return asyncMintInfo.result;
+  }
+  return undefined;
+}
+
+const SerumDexContext = React.createContext<SerumDexContext | null>(null);
+type SerumDexContext = {
+  // Maps market address to open orders accounts.
+  openOrders: Map<string, Array<OpenOrders>>;
+  marketCache: Map<string, Market>;
+};
+
+export function useOpenOrders(): Map<string, Array<OpenOrders>> {
+  const ctx = useContext(SerumDexContext);
   if (ctx === null) {
     throw new Error("Context not available");
   }
-  return ctx.mintCache.get(mint.toString());
+  return ctx.openOrders;
+}
+
+export function useMarket(market: PublicKey): Market | undefined {
+  const ctx = useContext(SerumDexContext);
+  if (ctx === null) {
+    throw new Error("Context not available");
+  }
+  return ctx.marketCache.get(market.toString());
+}
+
+export function SerumDexContextProvider(props: any) {
+  const [ooAccounts, setOoAccounts] = useState<Map<string, Array<OpenOrders>>>(
+    new Map()
+  );
+  const [marketCache, setMarketCache] = useState<Map<string, Market>>(
+    new Map()
+  );
+  const provider = props.provider;
+
+  // Two operations:
+  // 1. Fetch all open orders accounts for the connected wallet.
+  // 2. Batch fetch all market accounts.
+  useEffect(() => {
+    OpenOrders.findForOwner(
+      provider.connection,
+      provider.wallet.publicKey,
+      DEX_PID
+    ).then(async (openOrders) => {
+      const newOoAccounts = new Map();
+      let markets = new Set<string>();
+      openOrders.forEach((oo) => {
+        markets.add(oo.market.toString());
+        if (newOoAccounts.get(oo.market.toString())) {
+          newOoAccounts.get(oo.market.toString()).push(oo);
+        } else {
+          newOoAccounts.set(oo.market.toString(), [oo]);
+        }
+      });
+      if (markets.size > 100) {
+        // Punt request chunking until there's user demand.
+        throw new Error(
+          "Too many markets. Please file an issue to update this"
+        );
+      }
+      const marketAccounts = (
+        await anchor.utils.getMultipleAccounts(
+          provider.connection,
+          // @ts-ignore
+          [...markets].map((m) => new PublicKey(m))
+        )
+      ).map((programAccount) => {
+        return {
+          publicKey: programAccount?.publicKey,
+          account: new Market(
+            Market.getLayout(DEX_PID).decode(programAccount?.account.data),
+            -1, // Not used so don't bother fetching.
+            -1, // Not used so don't bother fetching.
+            provider.opts,
+            DEX_PID
+          ),
+        };
+      });
+      const newMarketCache = new Map(marketCache);
+      marketAccounts.forEach((m) => {
+        newMarketCache.set(m.publicKey!.toString(), m.account);
+      });
+
+      setMarketCache(newMarketCache);
+      setOoAccounts(newOoAccounts);
+    });
+  }, [provider.connection, provider.wallet.publicKey, DEX_PID]);
+  return (
+    <SerumDexContext.Provider
+      value={{
+        openOrders: ooAccounts,
+        marketCache,
+      }}
+    >
+      {props.children}
+    </SerumDexContext.Provider>
+  );
 }

@@ -18,7 +18,7 @@ function App() {
       preflightCommitment: "recent",
       commitment: "recent",
     };
-    const network = "https://api.mainnet-beta.solana.com";
+    const network = "https://solana-api.projectserum.com";
     const wallet = new Wallet("https://www.sollet.io", network);
     const connection = new Connection(network, opts.preflightCommitment);
     const provider = new Provider(connection, wallet, opts);

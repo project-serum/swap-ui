@@ -67,6 +67,7 @@ export default function TokenDialog({
                 .concat([USDC_MINT, USDT_MINT])
                 .map((mint) => (
                   <TokenListItem
+                    key={mint.toString()}
                     mint={mint}
                     onClick={(mint) => {
                       setMint(mint);

@@ -7,23 +7,23 @@ import {
   makeStyles,
   Card,
   Button,
-  Tabs,
-  Tab,
-  IconButton,
   Paper,
   Typography,
   TextField,
 } from "@material-ui/core";
-import { Settings, Info, ExpandMore } from "@material-ui/icons";
+import { Info, ExpandMore } from "@material-ui/icons";
 import {
+  MintContextProvider,
   SwapContextProvider,
   TokenListContextProvider,
+  SerumDexContextProvider,
   useSwapContext,
   useTokenList,
   useOwnedTokenAccount,
-  useMintAccount,
+  useMint,
 } from "./Context";
 import TokenDialog from "./TokenDialog";
+import SettingsButton from "./SettingsDialog";
 
 const useStyles = makeStyles(() => ({
   card: {
@@ -38,10 +38,6 @@ const useStyles = makeStyles(() => ({
   },
   tab: {
     width: "50%",
-  },
-  settings: {
-    display: "flex",
-    flexDirection: "row-reverse",
   },
   settingsButton: {
     padding: 0,
@@ -76,11 +72,15 @@ export default function Swap({
 }) {
   const swapClient = new SwapClient(provider, tokenList);
   return (
-    <SwapContextProvider swapClient={swapClient}>
-      <TokenListContextProvider tokenList={tokenList}>
-        <SwapInner style={style} />
-      </TokenListContextProvider>
-    </SwapContextProvider>
+    <MintContextProvider provider={provider}>
+      <SwapContextProvider swapClient={swapClient}>
+        <TokenListContextProvider tokenList={tokenList}>
+          <SerumDexContextProvider provider={provider}>
+            <SwapInner style={style} />
+          </SerumDexContextProvider>
+        </TokenListContextProvider>
+      </SwapContextProvider>
+    </MintContextProvider>
   );
 }
 
@@ -140,7 +140,7 @@ function AuxilliaryLabel() {
 
   return (
     <div className={styles.auxilliaryLabel}>
-      <Typography color="textSecondary">Serum</Typography>
+      <Typography color="textSecondary"></Typography>
       <div style={{ display: "flex" }}>
         <div
           style={{
@@ -160,16 +160,6 @@ function AuxilliaryLabel() {
   );
 }
 
-function TabSelector() {
-  const styles = useStyles();
-  return (
-    <Tabs>
-      <Tab label="Trade" className={styles.tab} />
-      <Tab label="Accounts" className={styles.tab} />
-    </Tabs>
-  );
-}
-
 export function SwapToFromButton() {
   const styles = useStyles();
   const { swapToFromMints } = useSwapContext();
@@ -180,22 +170,10 @@ export function SwapToFromButton() {
   );
 }
 
-function SettingsButton() {
-  const styles = useStyles();
-  return (
-    <div className={styles.settings}>
-      <IconButton className={styles.settingsButton}>
-        <Settings />
-      </IconButton>
-    </div>
-  );
-}
-
 function SwapFromForm() {
   const { fromMint, setFromMint, fromAmount, setFromAmount } = useSwapContext();
   return (
     <SwapTokenForm
-      isEstimate={false}
       mint={fromMint}
       setMint={setFromMint}
       amount={fromAmount}
@@ -208,7 +186,6 @@ function SwapToForm() {
   const { toMint, setToMint, toAmount, setToAmount } = useSwapContext();
   return (
     <SwapTokenForm
-      isEstimate={true}
       mint={toMint}
       setMint={setToMint}
       amount={toAmount}
@@ -218,13 +195,11 @@ function SwapToForm() {
 }
 
 function SwapTokenForm({
-  isEstimate,
   mint,
   setMint,
   amount,
   setAmount,
 }: {
-  isEstimate: boolean;
   mint: PublicKey;
   setMint: (m: PublicKey) => void;
   amount: number;
@@ -232,10 +207,10 @@ function SwapTokenForm({
 }) {
   const [showTokenDialog, setShowTokenDialog] = useState(false);
   const tokenAccount = useOwnedTokenAccount(mint);
-  const mintAccount = useMintAccount(mint);
+  const mintAccount = useMint(mint);
 
   return (
-    <Paper elevation={0} variant="outlined">
+    <Paper elevation={0} variant="outlined" style={{ borderRadius: "10px" }}>
       <div
         style={{
           height: "50px",
@@ -283,7 +258,7 @@ function TokenButton({
 }) {
   return (
     <Button onClick={onClick} style={{ width: "116px" }}>
-      <TokenIcon mint={mint} style={{ width: "25px" }} />
+      <TokenIcon mint={mint} style={{ width: "25px", borderRadius: "13px" }} />
       <TokenName mint={mint} />
       <ExpandMore />
     </Button>
@@ -334,8 +309,4 @@ function SwapButton() {
       Swap
     </Button>
   );
-}
-
-function TokenSelector() {
-  return <div></div>;
 }
