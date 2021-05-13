@@ -2,6 +2,7 @@
   "name": "swap-ui",
   "version": "0.1.0",
   "private": true,
+  "homepage": ".",
   "dependencies": {
     "@material-ui/core": "^4.11.4",
     "@material-ui/icons": "^4.11.2",
@@ -29,7 +30,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "lint:fix": "prettier src/** -w"
+    "lint:fix": "prettier src/** -w",
+    "deploy": "gh-pages -d build/"
   },
   "eslintConfig": {
     "extends": [
@@ -50,6 +52,7 @@
     ]
   },
   "devDependencies": {
+    "gh-pages": "^3.1.0",
     "prettier": "^2.3.0"
   }
 }
