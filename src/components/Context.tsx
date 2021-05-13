@@ -11,7 +11,12 @@ import { TokenListContainer, TokenInfo } from "@solana/spl-token-registry";
 import { getOwnedTokenAccounts } from "../utils/tokens";
 
 const SRM_MINT = new PublicKey("SRMuApVNdxXokk5GT7XD5cUUgXMBCoAz2LHeuAoKWRt");
-const USDC_MINT = new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
+export const USDC_MINT = new PublicKey(
+  "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+);
+export const USDT_MINT = new PublicKey(
+  "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+);
 
 const SwapContext = React.createContext<null | SwapContext>(null);
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Typography } from "@material-ui/core";
 import { Provider } from "@project-serum/anchor";
 // @ts-ignore
 import Wallet from "@project-serum/sol-wallet-adapter";
@@ -41,18 +42,25 @@ function App() {
   }, [params]);
 
   return (
-    <div>
-      {isConnected && (
-        <div
-          style={{
-            width: "450px",
-            marginTop: "64px",
-            marginLeft: "auto",
-            marginRight: "auto",
-          }}
-        >
-          <Swap provider={params.provider} tokenList={params.tokenList} />
-        </div>
+    <div
+      style={{
+        width: "450px",
+        marginLeft: "auto",
+        marginRight: "auto",
+        position: "absolute",
+        left: 0,
+        right: 0,
+        top: 0,
+        bottom: 0,
+        display: "flex",
+        justifyContent: "center",
+        flexDirection: "column",
+      }}
+    >
+      {isConnected ? (
+        <Swap provider={params.provider} tokenList={params.tokenList} />
+      ) : (
+        <Typography style={{ textAlign: "center" }}>Disconnected</Typography>
       )}
     </div>
   );

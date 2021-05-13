@@ -1,5 +1,4 @@
-import React, { useState, useContext } from "react";
-import { BN } from "@project-serum/anchor";
+import { useState } from "react";
 import { PublicKey } from "@solana/web3.js";
 import { TokenListContainer } from "@solana/spl-token-registry";
 import { Provider } from "@project-serum/anchor";
@@ -24,11 +23,13 @@ import {
   useOwnedTokenAccount,
   useMintAccount,
 } from "./Context";
+import TokenDialog from "./TokenDialog";
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(() => ({
   card: {
     width: "450px",
     borderRadius: "10px",
+    border: "solid 1pt #e0e0e0",
   },
   cardContent: {
     marginLeft: "6px",
@@ -229,6 +230,7 @@ function SwapTokenForm({
   amount: number;
   setAmount: (a: number) => void;
 }) {
+  const [showTokenDialog, setShowTokenDialog] = useState(false);
   const tokenAccount = useOwnedTokenAccount(mint);
   const mintAccount = useMintAccount(mint);
 
@@ -241,7 +243,7 @@ function SwapTokenForm({
           justifyContent: "space-between",
         }}
       >
-        <TokenButton mint={mint} />
+        <TokenButton mint={mint} onClick={() => setShowTokenDialog(true)} />
         <TextField
           type="number"
           value={amount}
@@ -263,21 +265,32 @@ function SwapTokenForm({
             : `-`}
         </Typography>
       </div>
+      <TokenDialog
+        setMint={setMint}
+        open={showTokenDialog}
+        onClose={() => setShowTokenDialog(false)}
+      />
     </Paper>
   );
 }
 
-function TokenButton({ mint }: { mint: PublicKey }) {
+function TokenButton({
+  mint,
+  onClick,
+}: {
+  mint: PublicKey;
+  onClick: () => void;
+}) {
   return (
-    <Button style={{ width: "116px" }}>
-      <TokenIcon mint={mint} />
+    <Button onClick={onClick} style={{ width: "116px" }}>
+      <TokenIcon mint={mint} style={{ width: "25px" }} />
       <TokenName mint={mint} />
       <ExpandMore />
     </Button>
   );
 }
 
-function TokenIcon({ mint }: { mint: PublicKey }) {
+export function TokenIcon({ mint, style }: { mint: PublicKey; style: any }) {
   const tokenList = useTokenList();
   let tokenInfo = tokenList.filter((t) => t.address === mint.toString())[0];
   return (
@@ -288,7 +301,11 @@ function TokenIcon({ mint }: { mint: PublicKey }) {
         flexDirection: "column",
       }}
     >
-      <img style={{ width: "25px" }} src={tokenInfo.logoURI} />
+      {tokenInfo.logoURI ? (
+        <img alt="token logo" style={style} src={tokenInfo.logoURI} />
+      ) : (
+        <div style={style}></div>
+      )}
     </div>
   );
 }
