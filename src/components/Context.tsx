@@ -35,6 +35,7 @@ export function SwapContextProvider(props: any) {
   const [toBalance, setToBalance] = useState(undefined);
   const [minExpectedAmount, setMinExpectedAmount] = useState(0);
   const [ownedTokenAccounts, setOwnedTokenAccounts] = useState(undefined);
+  const [slippage, setSlippage] = useState(0.5);
 
   // Fetch all the owned token accounts for the wallet.
   useEffect(() => {
@@ -75,6 +76,8 @@ export function SwapContextProvider(props: any) {
         fromBalance,
         toBalance,
         ownedTokenAccounts,
+        slippage,
+        setSlippage,
       }}
     >
       {props.children}
@@ -109,6 +112,8 @@ export type SwapContext = {
   ownedTokenAccounts:
     | { publicKey: PublicKey; account: TokenAccount }[]
     | undefined;
+  slippage: number;
+  setSlippage: (n: number) => void;
 };
 
 const TokenListContext = React.createContext<null | TokenListContext>(null);

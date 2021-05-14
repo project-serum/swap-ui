@@ -23,7 +23,7 @@ import {
   useMint,
 } from "./Context";
 import TokenDialog from "./TokenDialog";
-import SettingsButton from "./SettingsDialog";
+import { SettingsButton } from "./Settings";
 
 const useStyles = makeStyles(() => ({
   card: {
