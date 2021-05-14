@@ -11,11 +11,11 @@ import {
   Typography,
 } from "@material-ui/core";
 import { TokenIcon } from "./Swap";
-import { useSwapContext } from "./context/Swap";
+import { useDexContext } from "./context/Dex";
 import { useTokenList } from "./context/TokenList";
 import { USDC_MINT, USDT_MINT } from "../utils/pubkeys";
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(() => ({
   dialogContent: {
     paddingTop: 0,
   },
@@ -38,7 +38,7 @@ export default function TokenDialog({
 }) {
   const [tokenFilter, setTokenFilter] = useState("");
   const styles = useStyles();
-  const { swapClient } = useSwapContext();
+  const { swapClient } = useDexContext();
   return (
     <Dialog
       open={open}

@@ -1,12 +1,12 @@
 import React, { useContext, useState } from "react";
-import { Swap as SwapClient } from "@project-serum/swap";
 import { PublicKey } from "@solana/web3.js";
 import { MintInfo } from "@solana/spl-token";
 import { SRM_MINT, USDC_MINT } from "../../utils/pubkeys";
-import { useFair } from "./Dex";
+import { useFairRoute } from "./Dex";
+
+const DEFAULT_SLIPPAGE_PERCENT = 0.5;
 
 export type SwapContext = {
-  swapClient: SwapClient;
   fromMint: PublicKey;
   setFromMint: (m: PublicKey) => void;
   toMint: PublicKey;
@@ -24,14 +24,13 @@ export type SwapContext = {
 const _SwapContext = React.createContext<null | SwapContext>(null);
 
 export function SwapContextProvider(props: any) {
-  const swapClient = props.swapClient;
   const [fromMint, setFromMint] = useState(SRM_MINT);
   const [toMint, setToMint] = useState(USDC_MINT);
   const [fromAmount, _setFromAmount] = useState(0);
   const [toAmount, _setToAmount] = useState(0);
   // Percent units.
-  const [slippage, setSlippage] = useState(0.5);
-  const fair = useFair(fromMint, toMint);
+  const [slippage, setSlippage] = useState(DEFAULT_SLIPPAGE_PERCENT);
+  const fair = useFairRoute(fromMint, toMint);
 
   const swapToFromMints = () => {
     const oldFrom = fromMint;
@@ -63,7 +62,6 @@ export function SwapContextProvider(props: any) {
   return (
     <_SwapContext.Provider
       value={{
-        swapClient,
         fromMint,
         setFromMint,
         toMint,

@@ -43,8 +43,6 @@ const useStyles = makeStyles(() => ({
 
 export function SettingsButton() {
   const styles = useStyles();
-  const { slippage, setSlippage } = useSwapContext();
-  const [showSettingsDialog, setShowSettingsDialog] = useState(false);
 
   return (
     <PopupState variant="popover">
@@ -70,52 +68,55 @@ export function SettingsButton() {
               }}
               PaperProps={{ style: { borderRadius: "10px" } }}
             >
-              <div style={{ padding: "15px", width: "305px" }}>
-                <Typography
-                  color="textSecondary"
-                  style={{ fontWeight: "bold" }}
-                >
-                  Settings
-                </Typography>
-                <div style={{ marginTop: "10px" }}>
-                  <Typography>Slippage tolerance</Typography>
-                  <TextField
-                    type="number"
-                    placeholder="Error tolerance percentage"
-                    value={slippage}
-                    onChange={(e) => setSlippage(parseFloat(e.target.value))}
-                    style={{
-                      display: "flex",
-                      justifyContent: "center",
-                      flexDirection: "column",
-                    }}
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">%</InputAdornment>
-                      ),
-                    }}
-                  />
-                  <Button
-                    style={{
-                      width: "100%",
-                      marginTop: "10px",
-                      background: "#e0e0e0",
-                    }}
-                    onClick={() => setShowSettingsDialog(true)}
-                  >
-                    Manage Dex Accounts
-                  </Button>
-                </div>
-                <SettingsDialog
-                  open={showSettingsDialog}
-                  onClose={() => setShowSettingsDialog(false)}
-                />
-              </div>
+              <SettingsDetails />
             </Popover>
           </div>
         )
       }
     </PopupState>
+  );
+}
+
+function SettingsDetails() {
+  const { slippage, setSlippage } = useSwapContext();
+  const [showSettingsDialog, setShowSettingsDialog] = useState(false);
+  return (
+    <div style={{ padding: "15px", width: "305px" }}>
+      <Typography color="textSecondary" style={{ fontWeight: "bold" }}>
+        Settings
+      </Typography>
+      <div style={{ marginTop: "10px" }}>
+        <Typography>Slippage tolerance</Typography>
+        <TextField
+          type="number"
+          placeholder="Error tolerance percentage"
+          value={slippage}
+          onChange={(e) => setSlippage(parseFloat(e.target.value))}
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            flexDirection: "column",
+          }}
+          InputProps={{
+            endAdornment: <InputAdornment position="end">%</InputAdornment>,
+          }}
+        />
+        <Button
+          style={{
+            width: "100%",
+            marginTop: "10px",
+            background: "#e0e0e0",
+          }}
+          onClick={() => setShowSettingsDialog(true)}
+        >
+          Manage Dex Accounts
+        </Button>
+      </div>
+      <SettingsDialog
+        open={showSettingsDialog}
+        onClose={() => setShowSettingsDialog(false)}
+      />
+    </div>
   );
 }
 

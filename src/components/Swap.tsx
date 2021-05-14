@@ -63,8 +63,8 @@ export default function Swap({
     <TokenListContextProvider tokenList={tokenList}>
       <MintContextProvider provider={provider}>
         <TokenContextProvider provider={provider}>
-          <DexContextProvider provider={provider}>
-            <SwapContextProvider swapClient={swapClient}>
+          <DexContextProvider swapClient={swapClient}>
+            <SwapContextProvider>
               <SwapCard style={style} />
             </SwapContextProvider>
           </DexContextProvider>

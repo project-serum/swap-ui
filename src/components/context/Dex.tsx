@@ -1,7 +1,7 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext, useState, useEffect, useMemo } from "react";
 import { useAsync } from "react-async-hook";
 import * as anchor from "@project-serum/anchor";
-import { Provider } from "@project-serum/anchor";
+import { Swap as SwapClient } from "@project-serum/swap";
 import {
   Market,
   OpenOrders,
@@ -9,6 +9,7 @@ import {
 } from "@project-serum/serum";
 import { PublicKey } from "@solana/web3.js";
 import { DEX_PID } from "../../utils/pubkeys";
+import { useTokenList } from "./TokenList";
 
 type DexContext = {
   // Maps market address to open orders accounts.
@@ -17,7 +18,7 @@ type DexContext = {
   setMarketCache: (c: Map<string, Market>) => void;
   orderbookCache: Map<string, Orderbook>;
   setOrderbookCache: (c: Map<string, Orderbook>) => void;
-  provider: Provider;
+  swapClient: SwapClient;
 };
 const _DexContext = React.createContext<DexContext | null>(null);
 
@@ -31,7 +32,7 @@ export function DexContextProvider(props: any) {
   const [orderbookCache, setOrderbookCache] = useState<Map<string, Orderbook>>(
     new Map()
   );
-  const provider = props.provider;
+  const swapClient = props.swapClient;
 
   // Two operations:
   //
@@ -40,8 +41,8 @@ export function DexContextProvider(props: any) {
   //
   useEffect(() => {
     OpenOrders.findForOwner(
-      provider.connection,
-      provider.wallet.publicKey,
+      swapClient.program.provider.connection,
+      swapClient.program.provider.wallet.publicKey,
       DEX_PID
     ).then(async (openOrders) => {
       const newOoAccounts = new Map();
@@ -62,7 +63,7 @@ export function DexContextProvider(props: any) {
       }
       const marketAccounts = (
         await anchor.utils.getMultipleAccounts(
-          provider.connection,
+          swapClient.program.provider.connection,
           // @ts-ignore
           [...markets].map((m) => new PublicKey(m))
         )
@@ -73,7 +74,7 @@ export function DexContextProvider(props: any) {
             Market.getLayout(DEX_PID).decode(programAccount?.account.data),
             -1, // Not used so don't bother fetching.
             -1, // Not used so don't bother fetching.
-            provider.opts,
+            swapClient.program.provider.opts,
             DEX_PID
           ),
         };
@@ -87,7 +88,11 @@ export function DexContextProvider(props: any) {
       });
       setOoAccounts(newOoAccounts);
     });
-  }, [provider.connection, provider.wallet.publicKey, provider.opts]);
+  }, [
+    swapClient.program.provider.connection,
+    swapClient.program.provider.wallet.publicKey,
+    swapClient.program.provider.opts,
+  ]);
   return (
     <_DexContext.Provider
       value={{
@@ -96,7 +101,7 @@ export function DexContextProvider(props: any) {
         setMarketCache,
         orderbookCache,
         setOrderbookCache,
-        provider,
+        swapClient,
       }}
     >
       {props.children}
@@ -104,7 +109,7 @@ export function DexContextProvider(props: any) {
   );
 }
 
-function useDexContext(): DexContext {
+export function useDexContext(): DexContext {
   const ctx = useContext(_DexContext);
   if (ctx === null) {
     throw new Error("Context not available");
@@ -118,15 +123,18 @@ export function useOpenOrders(): Map<string, Array<OpenOrders>> {
 }
 
 // Lazy load a given market.
-export function useMarket(market: PublicKey): Market | undefined {
+export function useMarket(market?: PublicKey): Market | undefined {
   const ctx = useDexContext();
 
   const asyncMarket = useAsync(async () => {
+    if (!market) {
+      return undefined;
+    }
     if (ctx.marketCache.get(market.toString())) {
       return ctx.marketCache.get(market.toString());
     }
     const marketClient = await Market.load(
-      ctx.provider.connection,
+      ctx.swapClient.program.provider.connection,
       market,
       undefined,
       DEX_PID
@@ -137,7 +145,7 @@ export function useMarket(market: PublicKey): Market | undefined {
     ctx.setMarketCache(cache);
 
     return marketClient;
-  }, [ctx.provider.connection, market]);
+  }, [ctx.swapClient.program.provider.connection, market]);
 
   if (asyncMarket.result) {
     return asyncMarket.result;
@@ -147,21 +155,21 @@ export function useMarket(market: PublicKey): Market | undefined {
 }
 
 // Lazy load the orderbook for a given market.
-export function useOrderbook(market: PublicKey): Orderbook | undefined {
-  const ctx = useDexContext();
+export function useOrderbook(market?: PublicKey): Orderbook | undefined {
+  const { swapClient, orderbookCache, setOrderbookCache } = useDexContext();
   const marketClient = useMarket(market);
 
   const asyncOrderbook = useAsync(async () => {
-    if (!marketClient) {
+    if (!market || !marketClient) {
       return undefined;
     }
-    if (ctx.orderbookCache.get(market.toString())) {
-      return ctx.orderbookCache.get(market.toString());
+    if (orderbookCache.get(market.toString())) {
+      return orderbookCache.get(market.toString());
     }
 
     const [bids, asks] = await Promise.all([
-      marketClient.loadBids(ctx.provider.connection),
-      marketClient.loadAsks(ctx.provider.connection),
+      marketClient.loadBids(swapClient.program.provider.connection),
+      marketClient.loadAsks(swapClient.program.provider.connection),
     ]);
 
     const orderbook = {
@@ -169,12 +177,12 @@ export function useOrderbook(market: PublicKey): Orderbook | undefined {
       asks,
     };
 
-    const cache = new Map(ctx.orderbookCache);
+    const cache = new Map(orderbookCache);
     cache.set(market.toString(), orderbook);
-    ctx.setOrderbookCache(cache);
+    setOrderbookCache(cache);
 
     return orderbook;
-  }, [ctx.provider.connection, market, marketClient]);
+  }, [swapClient.program.provider.connection, market, marketClient]);
 
   if (asyncOrderbook.result) {
     return asyncOrderbook.result;
@@ -183,33 +191,53 @@ export function useOrderbook(market: PublicKey): Orderbook | undefined {
   return undefined;
 }
 
-export function useMarketRoute(
-  fromMint: PublicKey,
-  toMint: PublicKey
-): Array<{ address: PublicKey; name: string; fair: number }> {
-  // todo
-  return [
-    {
-      address: new PublicKey("ByRys5tuUWDgL73G8JBAEfkdFf8JWBzPBDHsBVQ5vbQA"),
-      name: "SRM / USDC",
-      fair: 0.5,
-    },
-    {
-      address: new PublicKey("J7cPYBrXVy8Qeki2crZkZavcojf2sMRyQU7nx438Mf8t"),
-      name: "MATH / USDC",
-      fair: 1.23,
-    },
-  ];
+export function useMarketName(market: PublicKey): string {
+  const tokenList = useTokenList();
+  const marketClient = useMarket(market);
+  const baseTicker = tokenList
+    .filter((t) => t.address === marketClient?.baseMintAddress.toString())
+    .map((t) => t.symbol)[0];
+  const quoteTicker = tokenList
+    .filter((t) => t.address === marketClient?.quoteMintAddress.toString())
+    .map((t) => t.symbol)[0];
+  const name = `${baseTicker} / ${quoteTicker}`;
+  return name;
+}
+
+// Fair price for a given market, as defined by the mid.
+export function useFair(market?: PublicKey): number | undefined {
+  const orderbook = useOrderbook(market);
+  if (orderbook === undefined) {
+    return undefined;
+  }
+  const bestBid = orderbook.bids.items(true).next().value;
+  const bestOffer = orderbook.asks.items(false).next().value;
+  const mid = (bestBid.price + bestOffer.price) / 2.0;
+  return mid;
 }
 
 // Fair price for a theoretical toMint/fromMint market. I.e., the number
-// of `fromMint` tokens to purchase a single `toMint` token.
-export function useFair(
+// of `fromMint` tokens to purchase a single `toMint` token. Aggregates
+// across a trade route, if needed.
+export function useFairRoute(
   fromMint: PublicKey,
   toMint: PublicKey
 ): number | undefined {
-  // todo
-  return 0.5;
+  const { swapClient } = useDexContext();
+  const route = useMemo(
+    () => swapClient.route(fromMint, toMint),
+    [swapClient, fromMint, toMint]
+  );
+  const fromFair = useFair(route[0]);
+  const toFair = useFair(route[1]);
+
+  if (route.length === 1 && fromFair !== undefined) {
+    return 1.0 / fromFair;
+  }
+  if (fromFair === undefined || toFair === undefined) {
+    return undefined;
+  }
+  return toFair / fromFair;
 }
 
 type Orderbook = {
