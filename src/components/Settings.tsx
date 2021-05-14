@@ -22,6 +22,7 @@ import {
   MenuItem,
   TextField,
   InputAdornment,
+  Link,
 } from "@material-ui/core";
 import { SettingsOutlined as Settings } from "@material-ui/icons";
 import PopupState, { bindTrigger, bindPopover } from "material-ui-popup-state";
@@ -154,12 +155,12 @@ function OpenOrdersAccounts() {
         <TableHead>
           <TableRow>
             <TableCell>Market</TableCell>
-            <TableCell align="right">Base Used</TableCell>
-            <TableCell align="right">Base Free</TableCell>
-            <TableCell align="right">Quote Used</TableCell>
-            <TableCell align="right">Quote Free</TableCell>
-            <TableCell align="right">Open Orders Account</TableCell>
-            <TableCell align="right">Action</TableCell>
+            <TableCell align="center">Open Orders Account</TableCell>
+            <TableCell align="center">Base Used</TableCell>
+            <TableCell align="center">Base Free</TableCell>
+            <TableCell align="center">Quote Used</TableCell>
+            <TableCell align="center">Quote Free</TableCell>
+            <TableCell align="center">Action</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -212,24 +213,17 @@ function OpenOrdersRow({
   return (
     <TableRow key={market.toString()}>
       <TableCell component="th" scope="row">
-        {marketName}
+        <Typography>
+          <Link
+            href={`https://dex.projectserum.com/#/market/${market.toString()}`}
+            target="_blank"
+            rel="noopener"
+          >
+            {marketName}
+          </Link>
+        </Typography>
       </TableCell>
-      <TableCell align="right">
-        {toDisplay(base, ooAccount.baseTokenTotal.sub(ooAccount.baseTokenFree))}
-      </TableCell>
-      <TableCell align="right">
-        {toDisplay(base, ooAccount.baseTokenFree)}
-      </TableCell>
-      <TableCell align="right">
-        {toDisplay(
-          quote,
-          ooAccount.quoteTokenTotal.sub(ooAccount.quoteTokenFree)
-        )}
-      </TableCell>
-      <TableCell align="right">
-        {toDisplay(quote, ooAccount.quoteTokenFree)}
-      </TableCell>
-      <TableCell align="right">
+      <TableCell align="center">
         <Select
           value={ooAccount.address.toString()}
           onChange={(e) =>
@@ -249,7 +243,22 @@ function OpenOrdersRow({
           })}
         </Select>
       </TableCell>
-      <TableCell align="right">
+      <TableCell align="center">
+        {toDisplay(base, ooAccount.baseTokenTotal.sub(ooAccount.baseTokenFree))}
+      </TableCell>
+      <TableCell align="center">
+        {toDisplay(base, ooAccount.baseTokenFree)}
+      </TableCell>
+      <TableCell align="center">
+        {toDisplay(
+          quote,
+          ooAccount.quoteTokenTotal.sub(ooAccount.quoteTokenFree)
+        )}
+      </TableCell>
+      <TableCell align="center">
+        {toDisplay(quote, ooAccount.quoteTokenFree)}
+      </TableCell>
+      <TableCell align="center">
         <Button
           color="secondary"
           disabled={closeDisabled}

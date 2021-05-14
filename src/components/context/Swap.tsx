@@ -2,15 +2,25 @@ import React, { useContext, useState } from "react";
 import { Swap as SwapClient } from "@project-serum/swap";
 import { PublicKey } from "@solana/web3.js";
 import { MintInfo } from "@solana/spl-token";
+import { SRM_MINT, USDC_MINT } from "../../utils/pubkeys";
+import { useFair } from "./Dex";
 
-const SRM_MINT = new PublicKey("SRMuApVNdxXokk5GT7XD5cUUgXMBCoAz2LHeuAoKWRt");
-export const USDC_MINT = new PublicKey(
-  "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-);
-export const USDT_MINT = new PublicKey(
-  "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
-);
-
+export type SwapContext = {
+  swapClient: SwapClient;
+  fromMint: PublicKey;
+  setFromMint: (m: PublicKey) => void;
+  toMint: PublicKey;
+  setToMint: (m: PublicKey) => void;
+  fromAmount: number;
+  setFromAmount: (a: number) => void;
+  toAmount: number;
+  setToAmount: (a: number) => void;
+  swapToFromMints: () => void;
+  fromMintAccount?: MintInfo;
+  toMintAccount?: MintInfo;
+  slippage: number;
+  setSlippage: (n: number) => void;
+};
 const _SwapContext = React.createContext<null | SwapContext>(null);
 
 export function SwapContextProvider(props: any) {
@@ -21,6 +31,7 @@ export function SwapContextProvider(props: any) {
   const [toAmount, _setToAmount] = useState(0);
   // Percent units.
   const [slippage, setSlippage] = useState(0.5);
+  const fair = useFair(fromMint, toMint);
 
   const swapToFromMints = () => {
     const oldFrom = fromMint;
@@ -34,11 +45,19 @@ export function SwapContextProvider(props: any) {
   };
 
   const setFromAmount = (amount: number) => {
+    if (fair === undefined) {
+      throw new Error("Fair price not found");
+    }
     _setFromAmount(amount);
+    _setToAmount(amount / fair);
   };
 
   const setToAmount = (amount: number) => {
+    if (fair === undefined) {
+      throw new Error("Fair price not found");
+    }
     _setToAmount(amount);
+    _setFromAmount(amount * fair);
   };
 
   return (
@@ -70,20 +89,3 @@ export function useSwapContext(): SwapContext {
   }
   return ctx;
 }
-
-export type SwapContext = {
-  swapClient: SwapClient;
-  fromMint: PublicKey;
-  setFromMint: (m: PublicKey) => void;
-  toMint: PublicKey;
-  setToMint: (m: PublicKey) => void;
-  fromAmount: number;
-  setFromAmount: (a: number) => void;
-  toAmount: number;
-  setToAmount: (a: number) => void;
-  swapToFromMints: () => void;
-  fromMintAccount?: MintInfo;
-  toMintAccount?: MintInfo;
-  slippage: number;
-  setSlippage: (n: number) => void;
-};

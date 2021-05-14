@@ -2,19 +2,24 @@ import React, { useContext, useState, useEffect } from "react";
 import { useAsync } from "react-async-hook";
 import * as anchor from "@project-serum/anchor";
 import { Provider } from "@project-serum/anchor";
-import { Market, OpenOrders } from "@project-serum/serum";
+import {
+  Market,
+  OpenOrders,
+  Orderbook as OrderbookSide,
+} from "@project-serum/serum";
 import { PublicKey } from "@solana/web3.js";
+import { DEX_PID } from "../../utils/pubkeys";
 
-const DEX_PID = new PublicKey("9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin");
-
-const _DexContext = React.createContext<DexContext | null>(null);
 type DexContext = {
   // Maps market address to open orders accounts.
   openOrders: Map<string, Array<OpenOrders>>;
   marketCache: Map<string, Market>;
   setMarketCache: (c: Map<string, Market>) => void;
+  orderbookCache: Map<string, Orderbook>;
+  setOrderbookCache: (c: Map<string, Orderbook>) => void;
   provider: Provider;
 };
+const _DexContext = React.createContext<DexContext | null>(null);
 
 export function DexContextProvider(props: any) {
   const [ooAccounts, setOoAccounts] = useState<Map<string, Array<OpenOrders>>>(
@@ -23,11 +28,16 @@ export function DexContextProvider(props: any) {
   const [marketCache, setMarketCache] = useState<Map<string, Market>>(
     new Map()
   );
+  const [orderbookCache, setOrderbookCache] = useState<Map<string, Orderbook>>(
+    new Map()
+  );
   const provider = props.provider;
 
   // Two operations:
+  //
   // 1. Fetch all open orders accounts for the connected wallet.
-  // 2. Batch fetch all market accounts.
+  // 2. Batch fetch all market accounts for those open orders.
+  //
   useEffect(() => {
     OpenOrders.findForOwner(
       provider.connection,
@@ -84,6 +94,8 @@ export function DexContextProvider(props: any) {
         openOrders: ooAccounts,
         marketCache,
         setMarketCache,
+        orderbookCache,
+        setOrderbookCache,
         provider,
       }}
     >
@@ -92,19 +104,22 @@ export function DexContextProvider(props: any) {
   );
 }
 
-export function useOpenOrders(): Map<string, Array<OpenOrders>> {
+function useDexContext(): DexContext {
   const ctx = useContext(_DexContext);
   if (ctx === null) {
     throw new Error("Context not available");
   }
+  return ctx;
+}
+
+export function useOpenOrders(): Map<string, Array<OpenOrders>> {
+  const ctx = useDexContext();
   return ctx.openOrders;
 }
 
+// Lazy load a given market.
 export function useMarket(market: PublicKey): Market | undefined {
-  const ctx = useContext(_DexContext);
-  if (ctx === null) {
-    throw new Error("Context not available");
-  }
+  const ctx = useDexContext();
 
   const asyncMarket = useAsync(async () => {
     if (ctx.marketCache.get(market.toString())) {
@@ -130,3 +145,74 @@ export function useMarket(market: PublicKey): Market | undefined {
 
   return undefined;
 }
+
+// Lazy load the orderbook for a given market.
+export function useOrderbook(market: PublicKey): Orderbook | undefined {
+  const ctx = useDexContext();
+  const marketClient = useMarket(market);
+
+  const asyncOrderbook = useAsync(async () => {
+    if (!marketClient) {
+      return undefined;
+    }
+    if (ctx.orderbookCache.get(market.toString())) {
+      return ctx.orderbookCache.get(market.toString());
+    }
+
+    const [bids, asks] = await Promise.all([
+      marketClient.loadBids(ctx.provider.connection),
+      marketClient.loadAsks(ctx.provider.connection),
+    ]);
+
+    const orderbook = {
+      bids,
+      asks,
+    };
+
+    const cache = new Map(ctx.orderbookCache);
+    cache.set(market.toString(), orderbook);
+    ctx.setOrderbookCache(cache);
+
+    return orderbook;
+  }, [ctx.provider.connection, market, marketClient]);
+
+  if (asyncOrderbook.result) {
+    return asyncOrderbook.result;
+  }
+
+  return undefined;
+}
+
+export function useMarketRoute(
+  fromMint: PublicKey,
+  toMint: PublicKey
+): Array<{ address: PublicKey; name: string; fair: number }> {
+  // todo
+  return [
+    {
+      address: new PublicKey("ByRys5tuUWDgL73G8JBAEfkdFf8JWBzPBDHsBVQ5vbQA"),
+      name: "SRM / USDC",
+      fair: 0.5,
+    },
+    {
+      address: new PublicKey("J7cPYBrXVy8Qeki2crZkZavcojf2sMRyQU7nx438Mf8t"),
+      name: "MATH / USDC",
+      fair: 1.23,
+    },
+  ];
+}
+
+// Fair price for a theoretical toMint/fromMint market. I.e., the number
+// of `fromMint` tokens to purchase a single `toMint` token.
+export function useFair(
+  fromMint: PublicKey,
+  toMint: PublicKey
+): number | undefined {
+  // todo
+  return 0.5;
+}
+
+type Orderbook = {
+  bids: OrderbookSide;
+  asks: OrderbookSide;
+};

@@ -11,8 +11,9 @@ import {
   Typography,
 } from "@material-ui/core";
 import { TokenIcon } from "./Swap";
-import { useSwapContext, USDC_MINT, USDT_MINT } from "./context/Swap";
+import { useSwapContext } from "./context/Swap";
 import { useTokenList } from "./context/TokenList";
+import { USDC_MINT, USDT_MINT } from "../utils/pubkeys";
 
 const useStyles = makeStyles((theme) => ({
   dialogContent: {

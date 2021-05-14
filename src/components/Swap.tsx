@@ -11,7 +11,7 @@ import {
   Typography,
   TextField,
 } from "@material-ui/core";
-import { Info, ExpandMore } from "@material-ui/icons";
+import { ExpandMore } from "@material-ui/icons";
 import { SwapContextProvider, useSwapContext } from "./context/Swap";
 import { DexContextProvider } from "./context/Dex";
 import { MintContextProvider, useMint } from "./context/Mint";
@@ -19,6 +19,7 @@ import { TokenListContextProvider, useTokenList } from "./context/TokenList";
 import { TokenContextProvider, useOwnedTokenAccount } from "./context/Token";
 import TokenDialog from "./TokenDialog";
 import { SettingsButton } from "./Settings";
+import { InfoLabel } from "./Info";
 
 const useStyles = makeStyles(() => ({
   card: {
@@ -45,14 +46,6 @@ const useStyles = makeStyles(() => ({
     display: "block",
     marginLeft: "auto",
     marginRight: "auto",
-  },
-  auxilliaryLabel: {
-    marginTop: "10px",
-    marginBottom: "10px",
-    display: "flex",
-    justifyContent: "space-between",
-    marginLeft: "5px",
-    marginRight: "5px",
   },
 }));
 
@@ -89,9 +82,9 @@ function SwapCard({ style }: { style?: any }) {
         <SwapHeader />
         <div className={styles.cardContent}>
           <SwapFromForm />
-          <SwapToFromButton />
+          <ArrowButton />
           <SwapToForm />
-          <AuxilliaryLabel />
+          <InfoLabel />
           <SwapButton />
         </div>
       </Card>
@@ -123,41 +116,7 @@ function SwapHeader() {
   );
 }
 
-function AuxilliaryLabel() {
-  const styles = useStyles();
-
-  const { fromMint, toMint, fromAmount, toAmount } = useSwapContext();
-  const toPrice = (fromAmount / toAmount).toFixed(6); // TODO: decimals per mint type.
-
-  const tokenList = useTokenList();
-  let fromTokenInfo = tokenList.filter(
-    (t) => t.address === fromMint.toString()
-  )[0];
-  let toTokenInfo = tokenList.filter((t) => t.address === toMint.toString())[0];
-
-  return (
-    <div className={styles.auxilliaryLabel}>
-      <Typography color="textSecondary"></Typography>
-      <div style={{ display: "flex" }}>
-        <div
-          style={{
-            marginRight: "10px",
-            display: "flex",
-            justifyContent: "center",
-            flexDirection: "column",
-          }}
-        >
-          {fromAmount !== 0 && toAmount !== 0
-            ? `1 ${toTokenInfo.symbol} = ${toPrice} ${fromTokenInfo.symbol}`
-            : `-`}
-        </div>
-        <Info />
-      </div>
-    </div>
-  );
-}
-
-export function SwapToFromButton() {
+export function ArrowButton() {
   const styles = useStyles();
   const { swapToFromMints } = useSwapContext();
   return (
