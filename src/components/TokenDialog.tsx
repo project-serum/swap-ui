@@ -10,8 +10,9 @@ import {
   ListItem,
   Typography,
 } from "@material-ui/core";
-import { useSwapContext, useTokenList, USDC_MINT, USDT_MINT } from "./Context";
 import { TokenIcon } from "./Swap";
+import { useSwapContext, USDC_MINT, USDT_MINT } from "./context/Swap";
+import { useTokenList } from "./context/TokenList";
 
 const useStyles = makeStyles((theme) => ({
   dialogContent: {

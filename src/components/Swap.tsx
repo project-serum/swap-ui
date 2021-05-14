@@ -12,16 +12,11 @@ import {
   TextField,
 } from "@material-ui/core";
 import { Info, ExpandMore } from "@material-ui/icons";
-import {
-  MintContextProvider,
-  SwapContextProvider,
-  TokenListContextProvider,
-  SerumDexContextProvider,
-  useSwapContext,
-  useTokenList,
-  useOwnedTokenAccount,
-  useMint,
-} from "./Context";
+import { SwapContextProvider, useSwapContext } from "./context/Swap";
+import { DexContextProvider } from "./context/Dex";
+import { MintContextProvider, useMint } from "./context/Mint";
+import { TokenListContextProvider, useTokenList } from "./context/TokenList";
+import { TokenContextProvider, useOwnedTokenAccount } from "./context/Token";
 import TokenDialog from "./TokenDialog";
 import { SettingsButton } from "./Settings";
 
@@ -72,19 +67,21 @@ export default function Swap({
 }) {
   const swapClient = new SwapClient(provider, tokenList);
   return (
-    <MintContextProvider provider={provider}>
-      <SwapContextProvider swapClient={swapClient}>
-        <TokenListContextProvider tokenList={tokenList}>
-          <SerumDexContextProvider provider={provider}>
-            <SwapInner style={style} />
-          </SerumDexContextProvider>
-        </TokenListContextProvider>
-      </SwapContextProvider>
-    </MintContextProvider>
+    <TokenListContextProvider tokenList={tokenList}>
+      <MintContextProvider provider={provider}>
+        <TokenContextProvider provider={provider}>
+          <DexContextProvider provider={provider}>
+            <SwapContextProvider swapClient={swapClient}>
+              <SwapCard style={style} />
+            </SwapContextProvider>
+          </DexContextProvider>
+        </TokenContextProvider>
+      </MintContextProvider>
+    </TokenListContextProvider>
   );
 }
 
-function SwapInner({ style }: { style?: any }) {
+function SwapCard({ style }: { style?: any }) {
   const styles = useStyles();
   return (
     <div style={style}>
@@ -295,7 +292,7 @@ function TokenName({ mint }: { mint: PublicKey }) {
 
 function SwapButton() {
   const styles = useStyles();
-  const { fromMint, toMint, fromAmount, minExpectedAmount } = useSwapContext();
+  const { fromMint, toMint, fromAmount, slippage } = useSwapContext();
 
   const sendSwapTransaction = async () => {
     console.log("sending swap");

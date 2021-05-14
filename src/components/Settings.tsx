@@ -25,13 +25,10 @@ import {
 } from "@material-ui/core";
 import { SettingsOutlined as Settings } from "@material-ui/icons";
 import PopupState, { bindTrigger, bindPopover } from "material-ui-popup-state";
-import {
-  useOpenOrders,
-  useMarket,
-  useMint,
-  useTokenList,
-  useSwapContext,
-} from "./Context";
+import { useSwapContext } from "./context/Swap";
+import { useMarket, useOpenOrders } from "./context/Dex";
+import { useTokenList } from "./context/TokenList";
+import { useMint } from "./context/Mint";
 
 const useStyles = makeStyles(() => ({
   tab: {
@@ -161,7 +158,7 @@ function OpenOrdersAccounts() {
             <TableCell align="right">Base Free</TableCell>
             <TableCell align="right">Quote Used</TableCell>
             <TableCell align="right">Quote Free</TableCell>
-            <TableCell align="right">Open Orders</TableCell>
+            <TableCell align="right">Open Orders Account</TableCell>
             <TableCell align="right">Action</TableCell>
           </TableRow>
         </TableHead>
@@ -191,13 +188,13 @@ function OpenOrdersRow({
   const [ooAccount, setOoAccount] = useState(openOrders[0]);
   const marketClient = useMarket(market);
   const tokenList = useTokenList();
-  const base = useMint(marketClient!.baseMintAddress);
-  const quote = useMint(marketClient!.quoteMintAddress);
+  const base = useMint(marketClient?.baseMintAddress);
+  const quote = useMint(marketClient?.quoteMintAddress);
   const baseTicker = tokenList
-    .filter((t) => t.address === marketClient!.baseMintAddress.toString())
+    .filter((t) => t.address === marketClient?.baseMintAddress.toString())
     .map((t) => t.symbol)[0];
   const quoteTicker = tokenList
-    .filter((t) => t.address === marketClient!.quoteMintAddress.toString())
+    .filter((t) => t.address === marketClient?.quoteMintAddress.toString())
     .map((t) => t.symbol)[0];
   const marketName =
     baseTicker && quoteTicker
