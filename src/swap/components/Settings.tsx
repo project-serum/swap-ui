@@ -23,6 +23,9 @@ import {
   TextField,
   InputAdornment,
   Link,
+  Switch,
+  FormControlLabel,
+  FormGroup,
 } from "@material-ui/core";
 import { ToggleButton } from "@material-ui/lab";
 import { SettingsOutlined as Settings, Close } from "@material-ui/icons";
@@ -32,13 +35,16 @@ import { useMarket, useOpenOrders } from "./context/Dex";
 import { useTokenList } from "./context/TokenList";
 import { useMint } from "./context/Mint";
 
-const useStyles = makeStyles(() => ({
+const useStyles = makeStyles((theme) => ({
   tab: {
     width: "50%",
   },
   table: {},
   settingsButton: {
     padding: 0,
+  },
+  closeAccountSwitchLabel: {
+    color: theme.palette.text.secondary,
   },
 }));
 
@@ -148,6 +154,9 @@ function SettingsDetails() {
             </ToggleButton>
           </div>
         </div>
+        <div style={{ marginTop: "5px" }}>
+          <CloseNewAccountsSwitch />
+        </div>
         <Button
           style={{
             width: "100%",
@@ -164,6 +173,34 @@ function SettingsDetails() {
         onClose={() => setShowSettingsDialog(false)}
       />
     </div>
+  );
+}
+
+function CloseNewAccountsSwitch() {
+  const styles = useStyles();
+  const { isClosingNewAccounts, setIsClosingNewAccounts } = useSwapContext();
+
+  return (
+    <FormGroup row>
+      <FormControlLabel
+        classes={{ label: styles.closeAccountSwitchLabel }}
+        labelPlacement="start"
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginLeft: 0,
+          width: "100%",
+        }}
+        control={
+          <Switch
+            checked={isClosingNewAccounts}
+            onChange={() => setIsClosingNewAccounts(!isClosingNewAccounts)}
+            color="primary"
+          />
+        }
+        label="Close new accounts"
+      />
+    </FormGroup>
   );
 }
 
