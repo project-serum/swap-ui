@@ -11,6 +11,10 @@ export function TokenContextProvider(props: any) {
 
   // Fetch all the owned token accounts for the wallet.
   useEffect(() => {
+    if (!provider.wallet.publicKey) {
+      setOwnedTokenAccounts(undefined);
+      return;
+    }
     getOwnedTokenAccounts(provider.connection, provider.wallet.publicKey).then(
       setOwnedTokenAccounts
     );

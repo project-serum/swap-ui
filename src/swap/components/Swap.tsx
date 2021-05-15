@@ -307,6 +307,7 @@ function SwapButton() {
       variant="contained"
       className={styles.swapButton}
       onClick={sendSwapTransaction}
+      disabled={swapClient.program.provider.wallet.publicKey === null}
     >
       Swap
     </Button>

@@ -90,6 +90,7 @@ function SettingsDetails() {
     useSwapContext();
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const fair = useSwapFair();
+  const { swapClient } = useDexContext();
   return (
     <div style={{ padding: "15px", width: "305px" }}>
       <Typography color="textSecondary" style={{ fontWeight: "bold" }}>
@@ -165,6 +166,7 @@ function SettingsDetails() {
             marginTop: "10px",
             background: "#e0e0e0",
           }}
+          disabled={swapClient.program.provider.wallet.publicKey === null}
           onClick={() => setShowSettingsDialog(true)}
         >
           Manage Dex Accounts

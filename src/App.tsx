@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { SnackbarProvider, useSnackbar } from "notistack";
-import { Button, Typography } from "@material-ui/core";
+import { Button } from "@material-ui/core";
 import { Provider } from "@project-serum/anchor";
 // @ts-ignore
 import Wallet from "@project-serum/sol-wallet-adapter";
@@ -11,7 +11,10 @@ import {
   Transaction,
   TransactionSignature,
 } from "@solana/web3.js";
-import { TokenListProvider } from "@solana/spl-token-registry";
+import {
+  TokenListContainer,
+  TokenListProvider,
+} from "@solana/spl-token-registry";
 import Swap from "./swap";
 import "./App.css";
 
@@ -45,11 +48,10 @@ function App() {
 
 function AppInner() {
   const { enqueueSnackbar } = useSnackbar();
-  const [params, setParams] = useState<any>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [tokenList, setTokenList] = useState<TokenListContainer | null>(null);
 
-  // Create the provider and token list.
-  useEffect(() => {
+  const [provider, wallet] = useMemo(() => {
     const opts: ConfirmOptions = {
       preflightCommitment: "recent",
       commitment: "recent",
@@ -57,45 +59,63 @@ function AppInner() {
     const network = "https://solana-api.projectserum.com";
     const wallet = new Wallet("https://www.sollet.io", network);
     const connection = new Connection(network, opts.preflightCommitment);
-    const provider = new NotifyingProvider(connection, wallet, opts, (tx) => {
-      enqueueSnackbar("Transaction sent", {
-        variant: "success",
-        action: (
-          <Button
-            color="inherit"
-            component="a"
-            target="_blank"
-            rel="noopener"
-            href={`https://explorer.solana.com/tx/${tx}`}
-          >
-            View on Solana Explorer
-          </Button>
-        ),
-      });
-    });
-    new TokenListProvider().resolve().then((tokenList) => {
-      setParams({
-        provider,
-        tokenList,
-      });
-      wallet.connect();
-    });
-  }, [enqueueSnackbar, setParams]);
+    const provider = new NotifyingProvider(
+      connection,
+      wallet,
+      opts,
+      (tx, err) => {
+        if (err) {
+          enqueueSnackbar(`Error: ${err.toString()}`, {
+            variant: "error",
+          });
+        } else {
+          enqueueSnackbar("Transaction sent", {
+            variant: "success",
+            action: (
+              <Button
+                color="inherit"
+                component="a"
+                target="_blank"
+                rel="noopener"
+                href={`https://explorer.solana.com/tx/${tx}`}
+              >
+                View on Solana Explorer
+              </Button>
+            ),
+          });
+        }
+      }
+    );
+    return [provider, wallet];
+  }, [enqueueSnackbar]);
+
+  useEffect(() => {
+    new TokenListProvider().resolve().then(setTokenList);
+  }, [setTokenList]);
 
   // Connect to the wallet.
   useEffect(() => {
-    if (params !== null) {
-      params.provider.wallet.on("connect", () => {
-        setIsConnected(true);
-      });
-      params.provider.wallet.connect();
-    }
-  }, [params]);
+    wallet.on("connect", () => {
+      enqueueSnackbar("Wallet connected", { variant: "success" });
+      setIsConnected(true);
+    });
+    wallet.on("disconnect", () => {
+      enqueueSnackbar("Wallet disconnected", { variant: "info" });
+      setIsConnected(false);
+    });
+  }, [wallet, enqueueSnackbar]);
 
-  return isConnected ? (
-    <Swap provider={params.provider} tokenList={params.tokenList} />
-  ) : (
-    <Typography style={{ textAlign: "center" }}>Disconnected</Typography>
+  return (
+    <div>
+      <Button
+        variant="outlined"
+        onClick={() => (!isConnected ? wallet.connect() : wallet.disconnect())}
+        style={{ position: "fixed", right: 24, top: 24 }}
+      >
+        {!isConnected ? "Connect" : "Disconnect"}
+      </Button>
+      {tokenList && <Swap provider={provider} tokenList={tokenList} />}
+    </div>
   );
 }
 
@@ -107,13 +127,16 @@ function AppInner() {
 // as notifications in the parent app.
 class NotifyingProvider extends Provider {
   // Function to call whenever the provider sends a transaction;
-  private onTransaction: (tx: TransactionSignature) => void;
+  private onTransaction: (
+    tx: TransactionSignature | undefined,
+    err?: Error
+  ) => void;
 
   constructor(
     connection: Connection,
     wallet: Wallet,
     opts: ConfirmOptions,
-    onTransaction: (tx: TransactionSignature) => void
+    onTransaction: (tx: TransactionSignature | undefined, err?: Error) => void
   ) {
     super(connection, wallet, opts);
     this.onTransaction = onTransaction;
@@ -124,10 +147,15 @@ class NotifyingProvider extends Provider {
     signers?: Array<Account | undefined>,
     opts?: ConfirmOptions
   ): Promise<TransactionSignature> {
-    // A production implementation should handle error notifications as well.
-    const txSig = await super.send(tx, signers, opts);
-    this.onTransaction(txSig);
-    return txSig;
+    try {
+      // A production implementation should handle error notifications as well.
+      const txSig = await super.send(tx, signers, opts);
+      this.onTransaction(txSig);
+      return txSig;
+    } catch (err) {
+      this.onTransaction(undefined, err);
+      throw err;
+    }
   }
 }
 

@@ -40,6 +40,10 @@ export function DexContextProvider(props: any) {
   // 2. Batch fetch all market accounts for those open orders.
   //
   useEffect(() => {
+    if (!swapClient.program.provider.wallet.publicKey) {
+      setOoAccounts(new Map());
+      return;
+    }
     OpenOrders.findForOwner(
       swapClient.program.provider.connection,
       swapClient.program.provider.wallet.publicKey,
