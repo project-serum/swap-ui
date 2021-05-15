@@ -1,5 +1,5 @@
 // TODO: replace this whole file with something more modern. This is all copied
-//       from sollet..
+//       from sollet.
 
 import * as BufferLayout from "buffer-layout";
 import { BN } from "@project-serum/anchor";

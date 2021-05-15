@@ -12,7 +12,7 @@ import {
   TransactionSignature,
 } from "@solana/web3.js";
 import { TokenListProvider } from "@solana/spl-token-registry";
-import Swap from "./components/Swap";
+import Swap from "./swap";
 import "./App.css";
 
 // App illustrating the use of the Swap component.
