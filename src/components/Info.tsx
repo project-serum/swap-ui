@@ -9,14 +9,9 @@ import { Info } from "@material-ui/icons";
 import PopupState, { bindTrigger, bindPopover } from "material-ui-popup-state";
 import { PublicKey } from "@solana/web3.js";
 import { useTokenList } from "./context/TokenList";
-import { useSwapContext } from "./context/Swap";
+import { useSwapContext, useSwapFair } from "./context/Swap";
 import { useMint } from "./context/Mint";
-import {
-  useDexContext,
-  useMarketName,
-  useFair,
-  useFairRoute,
-} from "./context/Dex";
+import { useDexContext, useMarketName, useFair } from "./context/Dex";
 
 const useStyles = makeStyles((theme) => ({
   infoLabel: {
@@ -44,7 +39,7 @@ export function InfoLabel() {
 
   const { fromMint, toMint } = useSwapContext();
   const fromMintInfo = useMint(fromMint);
-  const fair = useFairRoute(fromMint, toMint);
+  const fair = useSwapFair();
 
   const tokenList = useTokenList();
   let fromTokenInfo = tokenList.filter(

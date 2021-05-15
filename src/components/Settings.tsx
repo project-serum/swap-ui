@@ -24,9 +24,10 @@ import {
   InputAdornment,
   Link,
 } from "@material-ui/core";
-import { SettingsOutlined as Settings } from "@material-ui/icons";
+import { ToggleButton } from "@material-ui/lab";
+import { SettingsOutlined as Settings, Close } from "@material-ui/icons";
 import PopupState, { bindTrigger, bindPopover } from "material-ui-popup-state";
-import { useSwapContext } from "./context/Swap";
+import { useSwapContext, useSwapFair } from "./context/Swap";
 import { useMarket, useOpenOrders } from "./context/Dex";
 import { useTokenList } from "./context/TokenList";
 import { useMint } from "./context/Mint";
@@ -78,29 +79,75 @@ export function SettingsButton() {
 }
 
 function SettingsDetails() {
-  const { slippage, setSlippage } = useSwapContext();
+  const { slippage, setSlippage, fairOverride, setFairOverride } =
+    useSwapContext();
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
+  const fair = useSwapFair();
   return (
     <div style={{ padding: "15px", width: "305px" }}>
       <Typography color="textSecondary" style={{ fontWeight: "bold" }}>
         Settings
       </Typography>
       <div style={{ marginTop: "10px" }}>
-        <Typography>Slippage tolerance</Typography>
-        <TextField
-          type="number"
-          placeholder="Error tolerance percentage"
-          value={slippage}
-          onChange={(e) => setSlippage(parseFloat(e.target.value))}
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            flexDirection: "column",
-          }}
-          InputProps={{
-            endAdornment: <InputAdornment position="end">%</InputAdornment>,
-          }}
-        />
+        <div>
+          <Typography color="textSecondary">Slippage tolerance</Typography>
+          <TextField
+            type="number"
+            placeholder="Error tolerance percentage"
+            value={slippage}
+            onChange={(e) => setSlippage(parseFloat(e.target.value))}
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              flexDirection: "column",
+            }}
+            InputProps={{
+              endAdornment: <InputAdornment position="end">%</InputAdornment>,
+            }}
+          />
+        </div>
+        <div style={{ marginTop: "5px" }}>
+          <Typography color="textSecondary">Fair price</Typography>
+          <div style={{ display: "flex" }}>
+            <TextField
+              type="number"
+              placeholder="Fair price override"
+              value={fair}
+              onChange={(e) => setFairOverride(parseFloat(e.target.value))}
+              style={{
+                marginRight: "10px",
+                flex: 1,
+                display: "flex",
+                justifyContent: "center",
+                flexDirection: "column",
+              }}
+              disabled={fairOverride === null}
+            />
+            <ToggleButton
+              selected={fairOverride === null}
+              onClick={() => {
+                if (fair === undefined) {
+                  console.error("Fair is undefined");
+                  return;
+                }
+                if (fairOverride === null) {
+                  setFairOverride(fair);
+                } else {
+                  setFairOverride(null);
+                }
+              }}
+              style={{
+                paddingTop: "3px",
+                paddingBottom: "3px",
+                paddingLeft: "5px",
+                paddingRight: "5px",
+                borderRadius: "20px",
+              }}
+            >
+              Auto
+            </ToggleButton>
+          </div>
+        </div>
         <Button
           style={{
             width: "100%",
@@ -139,6 +186,30 @@ export function SettingsDialog({
       }}
     >
       <div>
+        <div
+          style={{
+            marginTop: "10px",
+            paddingLeft: "24px",
+            paddingRight: "24px",
+            display: "flex",
+            justifyContent: "space-between",
+          }}
+        >
+          <Typography
+            color="textSecondary"
+            variant="h6"
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              flexDirection: "column",
+            }}
+          >
+            Serum Accounts
+          </Typography>
+          <IconButton onClick={onClose}>
+            <Close />
+          </IconButton>
+        </div>
         <DialogContent style={{ paddingTop: 0 }}>
           <OpenOrdersAccounts />
         </DialogContent>

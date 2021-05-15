@@ -6,6 +6,7 @@
   "dependencies": {
     "@material-ui/core": "^4.11.4",
     "@material-ui/icons": "^4.11.2",
+    "@material-ui/lab": "^4.0.0-alpha.58",
     "@project-serum/anchor": "^0.5.1-beta.2",
     "@project-serum/serum": "^0.13.34",
     "@project-serum/sol-wallet-adapter": "^0.2.0",

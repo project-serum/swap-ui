@@ -20,6 +20,8 @@ export type SwapContext = {
   toMintAccount?: MintInfo;
   slippage: number;
   setSlippage: (n: number) => void;
+  fairOverride: number | null;
+  setFairOverride: (n: number | null) => void;
 };
 const _SwapContext = React.createContext<null | SwapContext>(null);
 
@@ -30,7 +32,8 @@ export function SwapContextProvider(props: any) {
   const [toAmount, _setToAmount] = useState(0);
   // Percent units.
   const [slippage, setSlippage] = useState(DEFAULT_SLIPPAGE_PERCENT);
-  const fair = useFairRoute(fromMint, toMint);
+  const [fairOverride, setFairOverride] = useState<number | null>(null);
+  const fair = _useSwapFair(fromMint, toMint, fairOverride);
 
   const swapToFromMints = () => {
     const oldFrom = fromMint;
@@ -73,6 +76,8 @@ export function SwapContextProvider(props: any) {
         swapToFromMints,
         slippage,
         setSlippage,
+        fairOverride,
+        setFairOverride,
       }}
     >
       {props.children}
@@ -86,4 +91,19 @@ export function useSwapContext(): SwapContext {
     throw new Error("Context not available");
   }
   return ctx;
+}
+
+export function useSwapFair(): number | undefined {
+  const { fairOverride, fromMint, toMint } = useSwapContext();
+  return _useSwapFair(fromMint, toMint, fairOverride);
+}
+
+function _useSwapFair(
+  fromMint: PublicKey,
+  toMint: PublicKey,
+  fairOverride: number | null
+): number | undefined {
+  const fairRoute = useFairRoute(fromMint, toMint);
+  const fair = fairOverride === null ? fairRoute : fairOverride;
+  return fair;
 }
