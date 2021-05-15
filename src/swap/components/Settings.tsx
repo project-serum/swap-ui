@@ -31,9 +31,10 @@ import { ToggleButton } from "@material-ui/lab";
 import { SettingsOutlined as Settings, Close } from "@material-ui/icons";
 import PopupState, { bindTrigger, bindPopover } from "material-ui-popup-state";
 import { useSwapContext, useSwapFair } from "./context/Swap";
-import { useMarket, useOpenOrders } from "./context/Dex";
+import { useMarket, useOpenOrders, useDexContext } from "./context/Dex";
 import { useTokenList } from "./context/TokenList";
 import { useMint } from "./context/Mint";
+import { useOwnedTokenAccount } from "./context/Token";
 
 const useStyles = makeStyles((theme) => ({
   tab: {
@@ -130,6 +131,7 @@ function SettingsDetails() {
               disabled={fairOverride === null}
             />
             <ToggleButton
+              value="bold"
               selected={fairOverride === null}
               onClick={() => {
                 if (fair === undefined) {
@@ -292,10 +294,13 @@ function OpenOrdersRow({
   openOrders: Array<OpenOrders>;
 }) {
   const [ooAccount, setOoAccount] = useState(openOrders[0]);
+  const { swapClient } = useDexContext();
   const marketClient = useMarket(market);
   const tokenList = useTokenList();
   const base = useMint(marketClient?.baseMintAddress);
   const quote = useMint(marketClient?.quoteMintAddress);
+  const baseWallet = useOwnedTokenAccount(marketClient?.baseMintAddress);
+  const quoteWallet = useOwnedTokenAccount(marketClient?.quoteMintAddress);
   const baseTicker = tokenList
     .filter((t) => t.address === marketClient?.baseMintAddress.toString())
     .map((t) => t.symbol)[0];
@@ -315,7 +320,22 @@ function OpenOrdersRow({
     0;
 
   const settleFunds = async () => {
-    // TODO.
+    if (!marketClient) {
+      throw new Error("Market client not found");
+    }
+    if (!baseWallet || !quoteWallet) {
+      throw new Error("Base or quote wallet not found");
+    }
+    const referrerWallet = undefined;
+    const { transaction, signers } =
+      await marketClient.makeSettleFundsTransaction(
+        swapClient.program.provider.connection,
+        ooAccount,
+        baseWallet.publicKey,
+        quoteWallet.publicKey,
+        referrerWallet
+      );
+    await swapClient.program.provider.send(transaction, signers);
   };
 
   const closeOpenOrders = async () => {
@@ -350,7 +370,10 @@ function OpenOrdersRow({
         >
           {openOrders.map((oo) => {
             return (
-              <MenuItem value={oo.address.toString()}>
+              <MenuItem
+                key={oo.address.toString()}
+                value={oo.address.toString()}
+              >
                 {oo.address.toString()}
               </MenuItem>
             );

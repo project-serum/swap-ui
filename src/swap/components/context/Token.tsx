@@ -36,11 +36,14 @@ export type TokenContext = {
 // Null => none exists.
 // Undefined => loading.
 export function useOwnedTokenAccount(
-  mint: PublicKey
+  mint?: PublicKey
 ): { publicKey: PublicKey; account: TokenAccount } | null | undefined {
   const ctx = useContext(_TokenContext);
   if (ctx === null) {
     throw new Error("Context not available");
+  }
+  if (mint === undefined) {
+    return mint;
   }
   if (ctx.ownedTokenAccounts === undefined) {
     return undefined;
