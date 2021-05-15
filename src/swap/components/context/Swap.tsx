@@ -1,4 +1,5 @@
 import React, { useContext, useState } from "react";
+import * as assert from "assert";
 import { PublicKey } from "@solana/web3.js";
 import { SRM_MINT, USDC_MINT } from "../../utils/pubkeys";
 import { useFairRoute } from "./Dex";
@@ -53,6 +54,8 @@ export function SwapContextProvider(props: any) {
   const [slippage, setSlippage] = useState(DEFAULT_SLIPPAGE_PERCENT);
   const [fairOverride, setFairOverride] = useState<number | null>(null);
   const fair = _useSwapFair(fromMint, toMint, fairOverride);
+
+  assert.ok(slippage >= 0);
 
   const swapToFromMints = () => {
     const oldFrom = fromMint;

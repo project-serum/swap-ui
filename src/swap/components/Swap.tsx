@@ -257,7 +257,14 @@ function TokenName({ mint }: { mint: PublicKey }) {
 
 function SwapButton() {
   const styles = useStyles();
-  const { fromMint, toMint, fromAmount, toAmount, slippage } = useSwapContext();
+  const {
+    fromMint,
+    toMint,
+    fromAmount,
+    toAmount,
+    slippage,
+    isClosingNewAccounts,
+  } = useSwapContext();
   const { swapClient } = useDexContext();
   const fromMintInfo = useMint(fromMint);
   const toMintInfo = useMint(toMint);
@@ -271,9 +278,9 @@ function SwapButton() {
       throw new Error("Unable to calculate mint decimals");
     }
     const amount = new BN(fromAmount).muln(10 ** fromMintInfo.decimals);
-    const minExpectedSwapAmount = new BN(
-      (toAmount * (100 - slippage)) / 100
-    ).muln(10 ** toMintInfo.decimals);
+    const minExpectedSwapAmount = new BN(toAmount * 10 ** toMintInfo.decimals)
+      .muln(100 - slippage)
+      .divn(100);
     const fromOpenOrders = fromMarket
       ? openOrders.get(fromMarket?.address.toString())
       : undefined;
@@ -291,6 +298,8 @@ function SwapButton() {
       toMarket,
       fromOpenOrders: fromOpenOrders ? fromOpenOrders[0].address : undefined,
       toOpenOrders: toOpenOrders ? toOpenOrders[0].address : undefined,
+      // Auto close newly created open orders accounts.
+      close: isClosingNewAccounts,
     });
   };
   return (
