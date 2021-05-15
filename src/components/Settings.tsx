@@ -227,7 +227,8 @@ function OpenOrdersAccounts() {
             <TableCell align="center">Base Free</TableCell>
             <TableCell align="center">Quote Used</TableCell>
             <TableCell align="center">Quote Free</TableCell>
-            <TableCell align="center">Action</TableCell>
+            <TableCell align="center">Settle</TableCell>
+            <TableCell align="center">Close</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -268,10 +269,17 @@ function OpenOrdersRow({
     baseTicker && quoteTicker
       ? `${baseTicker} / ${quoteTicker}`
       : market.toString();
+  const settleDisabled =
+    ooAccount.baseTokenFree.toNumber() + ooAccount.quoteTokenFree.toNumber() ===
+    0;
   const closeDisabled =
     ooAccount.baseTokenTotal.toNumber() +
       ooAccount.quoteTokenTotal.toNumber() !==
     0;
+
+  const settleFunds = async () => {
+    // TODO.
+  };
 
   const closeOpenOrders = async () => {
     // TODO.
@@ -326,6 +334,11 @@ function OpenOrdersRow({
       </TableCell>
       <TableCell align="center">
         {toDisplay(quote, ooAccount.quoteTokenFree)}
+      </TableCell>
+      <TableCell align="center">
+        <Button color="primary" disabled={settleDisabled} onClick={settleFunds}>
+          Settle
+        </Button>
       </TableCell>
       <TableCell align="center">
         <Button
