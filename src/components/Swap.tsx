@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { PublicKey } from "@solana/web3.js";
 import { TokenListContainer } from "@solana/spl-token-registry";
-import { Provider } from "@project-serum/anchor";
+import { BN, Provider } from "@project-serum/anchor";
 import { Swap as SwapClient } from "@project-serum/swap";
 import {
   makeStyles,
@@ -13,7 +13,7 @@ import {
 } from "@material-ui/core";
 import { ExpandMore } from "@material-ui/icons";
 import { SwapContextProvider, useSwapContext } from "./context/Swap";
-import { DexContextProvider } from "./context/Dex";
+import { DexContextProvider, useDexContext } from "./context/Dex";
 import { MintContextProvider, useMint } from "./context/Mint";
 import { TokenListContextProvider, useTokenList } from "./context/TokenList";
 import { TokenContextProvider, useOwnedTokenAccount } from "./context/Token";
@@ -251,10 +251,25 @@ function TokenName({ mint }: { mint: PublicKey }) {
 
 function SwapButton() {
   const styles = useStyles();
-  const { fromMint, toMint, fromAmount, slippage } = useSwapContext();
+  const { fromMint, toMint, fromAmount, toAmount, slippage } = useSwapContext();
+  const { swapClient } = useDexContext();
+  const fromMintInfo = useMint(fromMint);
+  const toMintInfo = useMint(toMint);
 
   const sendSwapTransaction = async () => {
-    console.log("sending swap");
+    if (!fromMintInfo || !toMintInfo) {
+      throw new Error("Unable to calculate mint decimals");
+    }
+    const amount = new BN(fromAmount).muln(10 ** fromMintInfo.decimals);
+    const minExpectedSwapAmount = new BN(
+      (toAmount * (100 - slippage)) / 100
+    ).muln(10 ** toMintInfo.decimals);
+    await swapClient.swap({
+      fromMint,
+      toMint,
+      amount,
+      minExpectedSwapAmount,
+    });
   };
   return (
     <Button

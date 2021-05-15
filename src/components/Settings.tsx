@@ -188,25 +188,20 @@ export function SettingsDialog({
       <div>
         <div
           style={{
-            marginTop: "10px",
-            paddingLeft: "24px",
-            paddingRight: "24px",
+            height: "24px",
             display: "flex",
             justifyContent: "space-between",
           }}
         >
-          <Typography
-            color="textSecondary"
-            variant="h6"
+          <IconButton
+            onClick={onClose}
             style={{
-              display: "flex",
-              justifyContent: "center",
-              flexDirection: "column",
+              padding: 0,
+              position: "absolute",
+              right: "8px",
+              top: "8px",
             }}
           >
-            Serum Accounts
-          </Typography>
-          <IconButton onClick={onClose}>
             <Close />
           </IconButton>
         </div>
@@ -279,7 +274,9 @@ function OpenOrdersRow({
     0;
 
   const closeOpenOrders = async () => {
-    // todo
+    // TODO.
+    //
+    // Blocked by https://github.com/project-serum/serum-dex/pull/112.
   };
 
   return (

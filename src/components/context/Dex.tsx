@@ -229,10 +229,18 @@ export function useFairRoute(
     [swapClient, fromMint, toMint]
   );
   const fromFair = useFair(route[0]);
+  const fromMarket = useMarket(route[0]);
   const toFair = useFair(route[1]);
 
   if (route.length === 1 && fromFair !== undefined) {
-    return 1.0 / fromFair;
+    if (fromMarket === undefined) {
+      return undefined;
+    }
+    if (fromMarket?.baseMintAddress.equals(fromMint)) {
+      return 1.0 / fromFair;
+    } else {
+      return fromFair;
+    }
   }
   if (fromFair === undefined || toFair === undefined) {
     return undefined;
