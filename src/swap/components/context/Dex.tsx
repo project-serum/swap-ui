@@ -9,7 +9,7 @@ import {
 } from "@project-serum/serum";
 import { PublicKey } from "@solana/web3.js";
 import { DEX_PID } from "../../utils/pubkeys";
-import { useTokenList } from "./TokenList";
+import { useTokenMap } from "./TokenList";
 
 type DexContext = {
   // Maps market address to open orders accounts.
@@ -196,14 +196,14 @@ export function useOrderbook(market?: PublicKey): Orderbook | undefined {
 }
 
 export function useMarketName(market: PublicKey): string {
-  const tokenList = useTokenList();
+  const tokenMap = useTokenMap();
   const marketClient = useMarket(market);
-  const baseTicker = tokenList
-    .filter((t) => t.address === marketClient?.baseMintAddress.toString())
-    .map((t) => t.symbol)[0];
-  const quoteTicker = tokenList
-    .filter((t) => t.address === marketClient?.quoteMintAddress.toString())
-    .map((t) => t.symbol)[0];
+  const baseTicker = marketClient
+    ? tokenMap.get(marketClient?.baseMintAddress.toString())?.symbol
+    : "-";
+  const quoteTicker = marketClient
+    ? tokenMap.get(marketClient?.quoteMintAddress.toString())?.symbol
+    : "-";
   const name = `${baseTicker} / ${quoteTicker}`;
   return name;
 }

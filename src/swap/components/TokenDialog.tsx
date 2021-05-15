@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { PublicKey } from "@solana/web3.js";
 import {
   makeStyles,
@@ -12,7 +12,7 @@ import {
 } from "@material-ui/core";
 import { TokenIcon } from "./Swap";
 import { useDexContext } from "./context/Dex";
-import { useTokenList } from "./context/TokenList";
+import { useTokenMap } from "./context/TokenList";
 import { USDC_MINT, USDT_MINT } from "../utils/pubkeys";
 
 const useStyles = makeStyles(() => ({
@@ -39,6 +39,9 @@ export default function TokenDialog({
   const [tokenFilter, setTokenFilter] = useState("");
   const styles = useStyles();
   const { swapClient } = useDexContext();
+  const tokens = useMemo(() => {
+    return swapClient.tokens().concat([USDC_MINT, USDT_MINT]);
+  }, [swapClient]);
   return (
     <Dialog
       open={open}
@@ -64,19 +67,16 @@ export default function TokenDialog({
           />
           <div>
             <List disablePadding>
-              {swapClient
-                .tokens()
-                .concat([USDC_MINT, USDT_MINT])
-                .map((mint) => (
-                  <TokenListItem
-                    key={mint.toString()}
-                    mint={mint}
-                    onClick={(mint) => {
-                      setMint(mint);
-                      onClose();
-                    }}
-                  />
-                ))}
+              {tokens.map((mint) => (
+                <TokenListItem
+                  key={mint.toString()}
+                  mint={mint}
+                  onClick={(mint) => {
+                    setMint(mint);
+                    onClose();
+                  }}
+                />
+              ))}
             </List>
           </div>
         </DialogContent>
@@ -101,13 +101,15 @@ function TokenListItem({
 }
 
 function TokenName({ mint }: { mint: PublicKey }) {
-  const tokenList = useTokenList();
-  let tokenInfo = tokenList.filter((t) => t.address === mint.toString())[0];
+  const tokenMap = useTokenMap();
+  let tokenInfo = tokenMap.get(mint.toString());
   return (
     <div style={{ marginLeft: "16px" }}>
-      <Typography style={{ fontWeight: "bold" }}>{tokenInfo.symbol}</Typography>
+      <Typography style={{ fontWeight: "bold" }}>
+        {tokenInfo?.symbol}
+      </Typography>
       <Typography color="textSecondary" style={{ fontSize: "14px" }}>
-        {tokenInfo.name}
+        {tokenInfo?.name}
       </Typography>
     </div>
   );

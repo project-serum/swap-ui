@@ -21,7 +21,7 @@ import {
   useMarket,
 } from "./context/Dex";
 import { MintContextProvider, useMint } from "./context/Mint";
-import { TokenListContextProvider, useTokenList } from "./context/TokenList";
+import { TokenListContextProvider, useTokenMap } from "./context/TokenList";
 import { TokenContextProvider, useOwnedTokenAccount } from "./context/Token";
 import TokenDialog from "./TokenDialog";
 import { SettingsButton } from "./Settings";
@@ -228,8 +228,8 @@ function TokenButton({
 }
 
 export function TokenIcon({ mint, style }: { mint: PublicKey; style: any }) {
-  const tokenList = useTokenList();
-  let tokenInfo = tokenList.filter((t) => t.address === mint.toString())[0];
+  const tokenMap = useTokenMap();
+  let tokenInfo = tokenMap.get(mint.toString());
   return (
     <div
       style={{
@@ -238,8 +238,8 @@ export function TokenIcon({ mint, style }: { mint: PublicKey; style: any }) {
         flexDirection: "column",
       }}
     >
-      {tokenInfo.logoURI ? (
-        <img alt="token logo" style={style} src={tokenInfo.logoURI} />
+      {tokenInfo?.logoURI ? (
+        <img alt="token logo" style={style} src={tokenInfo?.logoURI} />
       ) : (
         <div style={style}></div>
       )}
@@ -248,10 +248,10 @@ export function TokenIcon({ mint, style }: { mint: PublicKey; style: any }) {
 }
 
 function TokenName({ mint }: { mint: PublicKey }) {
-  const tokenList = useTokenList();
-  let tokenInfo = tokenList.filter((t) => t.address === mint.toString())[0];
+  const tokenMap = useTokenMap();
+  let tokenInfo = tokenMap.get(mint.toString());
   return (
-    <Typography style={{ marginLeft: "5px" }}>{tokenInfo.symbol}</Typography>
+    <Typography style={{ marginLeft: "5px" }}>{tokenInfo?.symbol}</Typography>
   );
 }
 

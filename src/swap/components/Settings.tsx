@@ -32,7 +32,7 @@ import { SettingsOutlined as Settings, Close } from "@material-ui/icons";
 import PopupState, { bindTrigger, bindPopover } from "material-ui-popup-state";
 import { useSwapContext, useSwapFair } from "./context/Swap";
 import { useMarket, useOpenOrders, useDexContext } from "./context/Dex";
-import { useTokenList } from "./context/TokenList";
+import { useTokenMap } from "./context/TokenList";
 import { useMint } from "./context/Mint";
 import { useOwnedTokenAccount } from "./context/Token";
 
@@ -298,17 +298,17 @@ function OpenOrdersRow({
   const [ooAccount, setOoAccount] = useState(openOrders[0]);
   const { swapClient } = useDexContext();
   const marketClient = useMarket(market);
-  const tokenList = useTokenList();
+  const tokenMap = useTokenMap();
   const base = useMint(marketClient?.baseMintAddress);
   const quote = useMint(marketClient?.quoteMintAddress);
   const baseWallet = useOwnedTokenAccount(marketClient?.baseMintAddress);
   const quoteWallet = useOwnedTokenAccount(marketClient?.quoteMintAddress);
-  const baseTicker = tokenList
-    .filter((t) => t.address === marketClient?.baseMintAddress.toString())
-    .map((t) => t.symbol)[0];
-  const quoteTicker = tokenList
-    .filter((t) => t.address === marketClient?.quoteMintAddress.toString())
-    .map((t) => t.symbol)[0];
+  const baseTicker = marketClient
+    ? tokenMap.get(marketClient?.baseMintAddress.toString())?.symbol
+    : "-";
+  const quoteTicker = marketClient
+    ? tokenMap.get(marketClient?.quoteMintAddress.toString())?.symbol
+    : "-";
   const marketName =
     baseTicker && quoteTicker
       ? `${baseTicker} / ${quoteTicker}`

@@ -8,7 +8,7 @@ import {
 import { Info } from "@material-ui/icons";
 import PopupState, { bindTrigger, bindPopover } from "material-ui-popup-state";
 import { PublicKey } from "@solana/web3.js";
-import { useTokenList } from "./context/TokenList";
+import { useTokenMap } from "./context/TokenList";
 import { useSwapContext, useSwapFair } from "./context/Swap";
 import { useMint } from "./context/Mint";
 import { useDexContext, useMarketName, useFair } from "./context/Dex";
@@ -41,18 +41,16 @@ export function InfoLabel() {
   const fromMintInfo = useMint(fromMint);
   const fair = useSwapFair();
 
-  const tokenList = useTokenList();
-  let fromTokenInfo = tokenList.filter(
-    (t) => t.address === fromMint.toString()
-  )[0];
-  let toTokenInfo = tokenList.filter((t) => t.address === toMint.toString())[0];
+  const tokenMap = useTokenMap();
+  let fromTokenInfo = tokenMap.get(fromMint.toString());
+  let toTokenInfo = tokenMap.get(toMint.toString());
 
   return (
     <div className={styles.infoLabel}>
       <Typography color="textSecondary"></Typography>
       <div style={{ display: "flex" }}>
         <div className={styles.fairPriceLabel}>
-          {fair !== undefined
+          {fair !== undefined && toTokenInfo && fromTokenInfo
             ? `1 ${toTokenInfo.symbol} = ${fair.toFixed(
                 fromMintInfo?.decimals
               )} ${fromTokenInfo.symbol}`
@@ -103,13 +101,9 @@ function InfoButton() {
 function InfoDetails() {
   const { fromMint, toMint } = useSwapContext();
   const { swapClient } = useDexContext();
-  const tokenList = useTokenList();
-  const fromMintTicker = tokenList
-    .filter((t) => t.address === fromMint.toString())
-    .map((t) => t.symbol)[0];
-  const toMintTicker = tokenList
-    .filter((t) => t.address === toMint.toString())
-    .map((t) => t.symbol)[0];
+  const tokenMap = useTokenMap();
+  const fromMintTicker = tokenMap.get(fromMint.toString())?.symbol;
+  const toMintTicker = tokenMap.get(toMint.toString())?.symbol;
   const addresses = [
     { ticker: fromMintTicker, mint: fromMint },
     { ticker: toMintTicker, mint: toMint },

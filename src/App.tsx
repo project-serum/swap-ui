@@ -24,25 +24,9 @@ import "./App.css";
 // to the `Swap` component, and then everything else is taken care of.
 function App() {
   return (
-    <div
-      style={{
-        width: "450px",
-        marginLeft: "auto",
-        marginRight: "auto",
-        position: "absolute",
-        left: 0,
-        right: 0,
-        top: 0,
-        bottom: 0,
-        display: "flex",
-        justifyContent: "center",
-        flexDirection: "column",
-      }}
-    >
-      <SnackbarProvider maxSnack={5} autoHideDuration={8000}>
-        <AppInner />
-      </SnackbarProvider>
-    </div>
+    <SnackbarProvider maxSnack={5} autoHideDuration={8000}>
+      <AppInner />
+    </SnackbarProvider>
   );
 }
 
@@ -106,7 +90,21 @@ function AppInner() {
   }, [wallet, enqueueSnackbar]);
 
   return (
-    <div>
+    <div
+      style={{
+        width: "450px",
+        marginLeft: "auto",
+        marginRight: "auto",
+        position: "absolute",
+        left: 0,
+        right: 0,
+        top: 0,
+        bottom: 0,
+        display: "flex",
+        justifyContent: "center",
+        flexDirection: "column",
+      }}
+    >
       <Button
         variant="outlined"
         onClick={() => (!isConnected ? wallet.connect() : wallet.disconnect())}
