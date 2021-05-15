@@ -36,6 +36,7 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
+    "lint": "prettier src/** --check",
     "lint:fix": "prettier src/** -w",
     "deploy": "gh-pages -d build/"
   },
