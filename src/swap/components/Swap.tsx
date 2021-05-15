@@ -13,7 +13,13 @@ import {
 } from "@material-ui/core";
 import { ExpandMore } from "@material-ui/icons";
 import { SwapContextProvider, useSwapContext } from "./context/Swap";
-import { DexContextProvider, useDexContext } from "./context/Dex";
+import {
+  DexContextProvider,
+  useDexContext,
+  useOpenOrders,
+  useRoute,
+  useMarket,
+} from "./context/Dex";
 import { MintContextProvider, useMint } from "./context/Mint";
 import { TokenListContextProvider, useTokenList } from "./context/TokenList";
 import { TokenContextProvider, useOwnedTokenAccount } from "./context/Token";
@@ -255,6 +261,10 @@ function SwapButton() {
   const { swapClient } = useDexContext();
   const fromMintInfo = useMint(fromMint);
   const toMintInfo = useMint(toMint);
+  const openOrders = useOpenOrders();
+  const route = useRoute(fromMint, toMint);
+  const fromMarket = useMarket(route[0]);
+  const toMarket = useMarket(route[1]);
 
   const sendSwapTransaction = async () => {
     if (!fromMintInfo || !toMintInfo) {
@@ -264,11 +274,23 @@ function SwapButton() {
     const minExpectedSwapAmount = new BN(
       (toAmount * (100 - slippage)) / 100
     ).muln(10 ** toMintInfo.decimals);
+    const fromOpenOrders = fromMarket
+      ? openOrders.get(fromMarket?.address.toString())
+      : undefined;
+    const toOpenOrders = toMarket
+      ? openOrders.get(toMarket?.address.toString())
+      : undefined;
     await swapClient.swap({
       fromMint,
       toMint,
       amount,
       minExpectedSwapAmount,
+      // Pass in the below parameters so that the client doesn't perform
+      // wasteful network requests when we already have the data.
+      fromMarket,
+      toMarket,
+      fromOpenOrders: fromOpenOrders ? fromOpenOrders[0].address : undefined,
+      toOpenOrders: toOpenOrders ? toOpenOrders[0].address : undefined,
     });
   };
   return (

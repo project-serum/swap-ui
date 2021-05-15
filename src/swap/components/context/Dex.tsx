@@ -223,11 +223,7 @@ export function useFairRoute(
   fromMint: PublicKey,
   toMint: PublicKey
 ): number | undefined {
-  const { swapClient } = useDexContext();
-  const route = useMemo(
-    () => swapClient.route(fromMint, toMint),
-    [swapClient, fromMint, toMint]
-  );
+  const route = useRoute(fromMint, toMint);
   const fromFair = useFair(route[0]);
   const fromMarket = useMarket(route[0]);
   const toFair = useFair(route[1]);
@@ -246,6 +242,17 @@ export function useFairRoute(
     return undefined;
   }
   return toFair / fromFair;
+}
+
+export function useRoute(
+  fromMint: PublicKey,
+  toMint: PublicKey
+): Array<PublicKey> {
+  const { swapClient } = useDexContext();
+  return useMemo(
+    () => swapClient.route(fromMint, toMint),
+    [swapClient, fromMint, toMint]
+  );
 }
 
 type Orderbook = {

@@ -1588,10 +1588,10 @@
     bs58 "^4.0.1"
     eventemitter3 "^4.0.4"
 
-"@project-serum/swap@^0.1.0-alpha.3":
-  version "0.1.0-alpha.3"
-  resolved "https://registry.yarnpkg.com/@project-serum/swap/-/swap-0.1.0-alpha.3.tgz#f400b646b2c40f41d34a4a273054be1051576296"
-  integrity sha512-pjk+uo2llyOhJnf7NCXkunm8dPlDOUbDWx97Xq/R7G/qDckBgbXuJxTE+5w0kxr6f2FwecglHDpfnfwXFJdFKQ==
+"@project-serum/swap@^0.1.0-alpha.4":
+  version "0.1.0-alpha.4"
+  resolved "https://registry.yarnpkg.com/@project-serum/swap/-/swap-0.1.0-alpha.4.tgz#f5035218173d7f8ccb0d53c637c10f50b4734c3f"
+  integrity sha512-5O6rJjLmaZTiPJUZq5iHBV1c3LQ11ZBv4wD1ol5rIPxDkHlmxqfH23XQVkC3aEJXIry5ffRf7hL/e1VgSW5C3A==
   dependencies:
     "@project-serum/anchor" "^0.5.1-beta.2"
     "@project-serum/serum" "^0.13.34"
