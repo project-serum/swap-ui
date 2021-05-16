@@ -45,10 +45,10 @@ export type SwapContext = {
 const _SwapContext = React.createContext<null | SwapContext>(null);
 
 export function SwapContextProvider(props: any) {
-  const [fromMint, setFromMint] = useState(SRM_MINT);
-  const [toMint, setToMint] = useState(USDC_MINT);
-  const [fromAmount, _setFromAmount] = useState(0);
-  const [toAmount, _setToAmount] = useState(0);
+  const [fromMint, setFromMint] = useState(props.fromMint ?? SRM_MINT);
+  const [toMint, setToMint] = useState(props.toMint ?? USDC_MINT);
+  const [fromAmount, _setFromAmount] = useState(props.fromAmount ?? 0);
+  const [toAmount, _setToAmount] = useState(props.toAmount ?? 0);
   const [isClosingNewAccounts, setIsClosingNewAccounts] = useState(false);
   // Percent units.
   const [slippage, setSlippage] = useState(DEFAULT_SLIPPAGE_PERCENT);

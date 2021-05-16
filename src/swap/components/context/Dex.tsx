@@ -272,6 +272,17 @@ export function useFairRoute(
   return toFair / fromFair;
 }
 
+export function useRoute(
+  fromMint: PublicKey,
+  toMint: PublicKey
+): Array<PublicKey> | null {
+  const route = useRouteVerbose(fromMint, toMint);
+  if (route === null) {
+    return null;
+  }
+  return route.markets;
+}
+
 // Types of routes.
 //
 // 1. Direct trades on USDC quoted markets.
@@ -279,24 +290,30 @@ export function useFairRoute(
 // 3. Wormhole <-> Sollet one-to-one swap markets.
 // 4. Wormhole <-> Native one-to-one swap markets.
 //
-export function useRoute(
+export function useRouteVerbose(
   fromMint: PublicKey,
   toMint: PublicKey
-): Array<PublicKey> | null {
+): { markets: Array<PublicKey>; kind: RouteKind } | null {
   const { swapClient } = useDexContext();
   const { wormholeMap, solletMap } = useTokenListContext();
   const asyncRoute = useAsync(async () => {
-    const wormholeMarket = await wormholeSwapMarket(
+    const swapMarket = await wormholeSwapMarket(
       swapClient.program.provider.connection,
       fromMint,
       toMint,
       wormholeMap,
       solletMap
     );
-    if (wormholeMarket !== null) {
-      return [wormholeMarket];
+    if (swapMarket !== null) {
+      const [wormholeMarket, kind] = swapMarket;
+      return { markets: [wormholeMarket], kind };
     }
-    return swapClient.route(fromMint, toMint);
+    const markets = swapClient.route(fromMint, toMint);
+    if (markets === null) {
+      return null;
+    }
+    const kind: RouteKind = "usdx";
+    return { markets, kind };
   }, [fromMint, toMint, swapClient]);
 
   if (asyncRoute.result) {
@@ -312,6 +329,8 @@ type Orderbook = {
 
 // Wormhole utils.
 
+type RouteKind = "wormhole-native" | "wormhole-sollet" | "usdx";
+
 // Maps fromMint || toMint (in sort order) to swap market public key.
 // All markets for wormhole<->native tokens should be here, e.g.
 // USDC <-> wUSDC.
@@ -326,31 +345,35 @@ function wormKey(fromMint: PublicKey, toMint: PublicKey): string {
   return first.toString() + second.toString();
 }
 
-function wormholeNativeMarket(
-  fromMint: PublicKey,
-  toMint: PublicKey
-): PublicKey | undefined {
-  return WORMHOLE_NATIVE_MAP.get(wormKey(fromMint, toMint));
-}
-
 async function wormholeSwapMarket(
   conn: Connection,
   fromMint: PublicKey,
   toMint: PublicKey,
   wormholeMap: Map<string, TokenInfo>,
   solletMap: Map<string, TokenInfo>
-): Promise<PublicKey | null> {
+): Promise<[PublicKey, RouteKind] | null> {
   let market = wormholeNativeMarket(fromMint, toMint);
-  if (market !== undefined) {
-    return market;
+  if (market !== null) {
+    return [market, "wormhole-native"];
   }
-  return await wormholeSolletMarket(
+  market = await wormholeSolletMarket(
     conn,
     fromMint,
     toMint,
     wormholeMap,
     solletMap
   );
+  if (market === null) {
+    return null;
+  }
+  return [market, "wormhole-sollet"];
+}
+
+function wormholeNativeMarket(
+  fromMint: PublicKey,
+  toMint: PublicKey
+): PublicKey | null {
+  return WORMHOLE_NATIVE_MAP.get(wormKey(fromMint, toMint)) ?? null;
 }
 
 // Returns the market address of the 1-1 sollet<->wormhole swap market if it

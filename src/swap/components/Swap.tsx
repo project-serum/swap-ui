@@ -17,11 +17,17 @@ import {
   DexContextProvider,
   useDexContext,
   useOpenOrders,
-  useRoute,
+  useRouteVerbose,
   useMarket,
 } from "./context/Dex";
 import { MintContextProvider, useMint } from "./context/Mint";
-import { TokenListContextProvider, useTokenMap } from "./context/TokenList";
+import {
+  TokenListContextProvider,
+  useTokenMap,
+  useTokenListContext,
+  SPL_REGISTRY_SOLLET_TAG,
+  SPL_REGISTRY_WORM_TAG,
+} from "./context/TokenList";
 import { TokenContextProvider, useOwnedTokenAccount } from "./context/Token";
 import TokenDialog from "./TokenDialog";
 import { SettingsButton } from "./Settings";
@@ -59,10 +65,18 @@ export default function Swap({
   style,
   provider,
   tokenList,
+  fromMint,
+  toMint,
+  fromAmount,
+  toAmount,
 }: {
-  style?: any;
   provider: Provider;
   tokenList: TokenListContainer;
+  fromMint?: PublicKey;
+  toMint?: PublicKey;
+  fromAmount?: number;
+  toAmount?: number;
+  style?: any;
 }) {
   const swapClient = new SwapClient(provider, tokenList);
   return (
@@ -70,7 +84,12 @@ export default function Swap({
       <MintContextProvider provider={provider}>
         <TokenContextProvider provider={provider}>
           <DexContextProvider swapClient={swapClient}>
-            <SwapContextProvider>
+            <SwapContextProvider
+              fromMint={fromMint}
+              toMint={toMint}
+              fromAmount={fromAmount}
+              toAmount={toAmount}
+            >
               <SwapCard style={style} />
             </SwapContextProvider>
           </DexContextProvider>
@@ -269,16 +288,48 @@ function SwapButton() {
   const fromMintInfo = useMint(fromMint);
   const toMintInfo = useMint(toMint);
   const openOrders = useOpenOrders();
-  const route = useRoute(fromMint, toMint);
-  const fromMarket = useMarket(route ? route[0] : undefined);
-  const toMarket = useMarket(route ? route[1] : undefined);
+  const route = useRouteVerbose(fromMint, toMint);
+  const fromMarket = useMarket(
+    route && route.markets ? route.markets[0] : undefined
+  );
+  const toMarket = useMarket(
+    route && route.markets ? route.markets[1] : undefined
+  );
+  const { wormholeMap, solletMap } = useTokenListContext();
+
+  // True iff the button should be activated.
+  const enabled =
+    // Mints are distinct.
+    fromMint.equals(toMint) === false &&
+    // Wallet is connected.
+    swapClient.program.provider.wallet.publicKey !== null &&
+    // Trade amounts greater than zero.
+    fromAmount > 0 &&
+    toAmount > 0 &&
+    // Trade route exists.
+    route !== null &&
+    // Wormhole <-> native markets must have the wormhole token as the
+    // *from* address since they're one-sided markets.
+    (route.kind !== "wormhole-native" ||
+      wormholeMap
+        .get(fromMint.toString())
+        ?.tags?.includes(SPL_REGISTRY_WORM_TAG) !== undefined) &&
+    // Wormhole <-> sollet markets must have the sollet token as the
+    // *from* address since they're one sided markets.
+    (route.kind !== "wormhole-sollet" ||
+      solletMap
+        .get(fromMint.toString())
+        ?.tags?.includes(SPL_REGISTRY_SOLLET_TAG) !== undefined);
 
   const sendSwapTransaction = async () => {
     if (!fromMintInfo || !toMintInfo) {
       throw new Error("Unable to calculate mint decimals");
     }
-    const amount = new BN(fromAmount).muln(10 ** fromMintInfo.decimals);
-    const minExpectedSwapAmount = new BN(toAmount * 10 ** toMintInfo.decimals)
+    const amount = new BN(fromAmount).mul(
+      new BN(10).pow(new BN(fromMintInfo.decimals))
+    );
+    const minExpectedSwapAmount = new BN(toAmount)
+      .mul(new BN(10).pow(new BN(toMintInfo.decimals)))
       .muln(100 - slippage)
       .divn(100);
     const fromOpenOrders = fromMarket
@@ -307,9 +358,7 @@ function SwapButton() {
       variant="contained"
       className={styles.swapButton}
       onClick={sendSwapTransaction}
-      disabled={
-        swapClient.program.provider.wallet.publicKey === null || route === null
-      }
+      disabled={!enabled}
     >
       Swap
     </Button>

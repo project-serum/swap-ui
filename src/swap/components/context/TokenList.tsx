@@ -12,6 +12,12 @@ type TokenListContext = {
 };
 const _TokenListContext = React.createContext<null | TokenListContext>(null);
 
+// Tag in the spl-token-registry for sollet wrapped tokens.
+export const SPL_REGISTRY_SOLLET_TAG = "wrapped-sollet";
+
+// Tag in the spl-token-registry for wormhole wrapped tokens.
+export const SPL_REGISTRY_WORM_TAG = "wormhole";
+
 export function TokenListContextProvider(props: any) {
   const tokenList = useMemo(
     () => props.tokenList.filterByClusterSlug("mainnet-beta").getList(),
@@ -50,7 +56,7 @@ export function TokenListContextProvider(props: any) {
   // Sollet wrapped tokens.
   const [swappableTokensSollet, solletMap] = useMemo(() => {
     const tokens = tokenList.filter((t: TokenInfo) => {
-      const isSollet = t.tags?.includes("wrapped-sollet");
+      const isSollet = t.tags?.includes(SPL_REGISTRY_SOLLET_TAG);
       return isSollet;
     });
     tokens.sort((a: TokenInfo, b: TokenInfo) =>
@@ -65,7 +71,7 @@ export function TokenListContextProvider(props: any) {
   // Wormhole wrapped tokens.
   const [swappableTokensWormhole, wormholeMap] = useMemo(() => {
     const tokens = tokenList.filter((t: TokenInfo) => {
-      const isSollet = t.tags?.includes("wormhole");
+      const isSollet = t.tags?.includes(SPL_REGISTRY_WORM_TAG);
       return isSollet;
     });
     tokens.sort((a: TokenInfo, b: TokenInfo) =>
