@@ -228,9 +228,13 @@ export function useFairRoute(
   toMint: PublicKey
 ): number | undefined {
   const route = useRoute(fromMint, toMint);
-  const fromFair = useFair(route[0]);
-  const fromMarket = useMarket(route[0]);
-  const toFair = useFair(route[1]);
+  const fromFair = useFair(route ? route[0] : undefined);
+  const fromMarket = useMarket(route ? route[0] : undefined);
+  const toFair = useFair(route ? route[1] : undefined);
+
+  if (route === null) {
+    return undefined;
+  }
 
   if (route.length === 1 && fromFair !== undefined) {
     if (fromMarket === undefined) {
@@ -251,7 +255,7 @@ export function useFairRoute(
 export function useRoute(
   fromMint: PublicKey,
   toMint: PublicKey
-): Array<PublicKey> {
+): Array<PublicKey> | null {
   const { swapClient } = useDexContext();
   return useMemo(
     () => swapClient.route(fromMint, toMint),

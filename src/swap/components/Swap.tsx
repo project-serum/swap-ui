@@ -270,8 +270,8 @@ function SwapButton() {
   const toMintInfo = useMint(toMint);
   const openOrders = useOpenOrders();
   const route = useRoute(fromMint, toMint);
-  const fromMarket = useMarket(route[0]);
-  const toMarket = useMarket(route[1]);
+  const fromMarket = useMarket(route ? route[0] : undefined);
+  const toMarket = useMarket(route ? route[1] : undefined);
 
   const sendSwapTransaction = async () => {
     if (!fromMintInfo || !toMintInfo) {
@@ -307,7 +307,9 @@ function SwapButton() {
       variant="contained"
       className={styles.swapButton}
       onClick={sendSwapTransaction}
-      disabled={swapClient.program.provider.wallet.publicKey === null}
+      disabled={
+        swapClient.program.provider.wallet.publicKey === null || route === null
+      }
     >
       Swap
     </Button>

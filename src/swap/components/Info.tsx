@@ -108,6 +108,7 @@ function InfoDetails() {
     { ticker: fromMintTicker, mint: fromMint },
     { ticker: toMintTicker, mint: toMint },
   ];
+  const route = swapClient.route(fromMint, toMint);
   return (
     <div style={{ padding: "15px", width: "250px" }}>
       <div>
@@ -117,9 +118,13 @@ function InfoDetails() {
         >
           Trade Route
         </Typography>
-        {swapClient.route(fromMint, toMint).map((market: PublicKey) => {
-          return <MarketRoute key={market.toString()} market={market} />;
-        })}
+        {route ? (
+          route.map((market: PublicKey) => {
+            return <MarketRoute key={market.toString()} market={market} />;
+          })
+        ) : (
+          <Typography color="textSecondary">Route not found</Typography>
+        )}
       </div>
       <div style={{ marginTop: "15px" }}>
         <Typography

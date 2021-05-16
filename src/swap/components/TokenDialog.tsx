@@ -40,7 +40,12 @@ export default function TokenDialog({
   const styles = useStyles();
   const { swapClient } = useDexContext();
   const tokens = useMemo(() => {
-    return swapClient.tokens().concat([USDC_MINT, USDT_MINT]);
+    return swapClient
+      .tokens()
+      .concat([USDC_MINT, USDT_MINT])
+      .filter(
+        (t) => t.toString() !== "So11111111111111111111111111111111111111112"
+      );
   }, [swapClient]);
   return (
     <Dialog
