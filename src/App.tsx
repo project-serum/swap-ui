@@ -152,7 +152,7 @@ class NotifyingProvider extends Provider {
       return txSig;
     } catch (err) {
       this.onTransaction(undefined, err);
-      throw err;
+      return "";
     }
   }
 }

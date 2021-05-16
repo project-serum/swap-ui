@@ -4,6 +4,8 @@ import { USDC_MINT, USDT_MINT } from "../../utils/pubkeys";
 
 type TokenListContext = {
   tokenMap: Map<string, TokenInfo>;
+  wormholeMap: Map<string, TokenInfo>;
+  solletMap: Map<string, TokenInfo>;
   swappableTokens: TokenInfo[];
   swappableTokensSollet: TokenInfo[];
   swappableTokensWormhole: TokenInfo[];
@@ -15,6 +17,8 @@ export function TokenListContextProvider(props: any) {
     () => props.tokenList.filterByClusterSlug("mainnet-beta").getList(),
     [props.tokenList]
   );
+
+  // Token map for quick lookup.
   const tokenMap = useMemo(() => {
     const tokenMap = new Map();
     tokenList.forEach((t: TokenInfo) => {
@@ -22,6 +26,8 @@ export function TokenListContextProvider(props: any) {
     });
     return tokenMap;
   }, [tokenList]);
+
+  // Tokens with USD(x) quoted markets.
   const swappableTokens = useMemo(() => {
     const tokens = tokenList
       .filter((t: TokenInfo) => {
@@ -40,7 +46,9 @@ export function TokenListContextProvider(props: any) {
     );
     return tokens;
   }, [tokenList, tokenMap]);
-  const swappableTokensSollet = useMemo(() => {
+
+  // Sollet wrapped tokens.
+  const [swappableTokensSollet, solletMap] = useMemo(() => {
     const tokens = tokenList.filter((t: TokenInfo) => {
       const isSollet = t.tags?.includes("wrapped-sollet");
       return isSollet;
@@ -48,9 +56,14 @@ export function TokenListContextProvider(props: any) {
     tokens.sort((a: TokenInfo, b: TokenInfo) =>
       a.symbol < b.symbol ? -1 : a.symbol > b.symbol ? 1 : 0
     );
-    return tokens;
+    return [
+      tokens,
+      new Map<string, TokenInfo>(tokens.map((t: TokenInfo) => [t.address, t])),
+    ];
   }, [tokenList]);
-  const swappableTokensWormhole = useMemo(() => {
+
+  // Wormhole wrapped tokens.
+  const [swappableTokensWormhole, wormholeMap] = useMemo(() => {
     const tokens = tokenList.filter((t: TokenInfo) => {
       const isSollet = t.tags?.includes("wormhole");
       return isSollet;
@@ -58,13 +71,18 @@ export function TokenListContextProvider(props: any) {
     tokens.sort((a: TokenInfo, b: TokenInfo) =>
       a.symbol < b.symbol ? -1 : a.symbol > b.symbol ? 1 : 0
     );
-    return tokens;
+    return [
+      tokens,
+      new Map<string, TokenInfo>(tokens.map((t: TokenInfo) => [t.address, t])),
+    ];
   }, [tokenList]);
 
   return (
     <_TokenListContext.Provider
       value={{
         tokenMap,
+        wormholeMap,
+        solletMap,
         swappableTokens,
         swappableTokensWormhole,
         swappableTokensSollet,
@@ -75,7 +93,7 @@ export function TokenListContextProvider(props: any) {
   );
 }
 
-function useTokenListContext(): TokenListContext {
+export function useTokenListContext(): TokenListContext {
   const ctx = useContext(_TokenListContext);
   if (ctx === null) {
     throw new Error("Context not available");

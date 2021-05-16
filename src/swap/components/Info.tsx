@@ -11,7 +11,7 @@ import { PublicKey } from "@solana/web3.js";
 import { useTokenMap } from "./context/TokenList";
 import { useSwapContext, useSwapFair } from "./context/Swap";
 import { useMint } from "./context/Mint";
-import { useDexContext, useMarketName, useFair } from "./context/Dex";
+import { useRoute, useMarketName, useFair } from "./context/Dex";
 
 const useStyles = makeStyles((theme) => ({
   infoLabel: {
@@ -100,7 +100,7 @@ function InfoButton() {
 
 function InfoDetails() {
   const { fromMint, toMint } = useSwapContext();
-  const { swapClient } = useDexContext();
+  const route = useRoute(fromMint, toMint);
   const tokenMap = useTokenMap();
   const fromMintTicker = tokenMap.get(fromMint.toString())?.symbol;
   const toMintTicker = tokenMap.get(toMint.toString())?.symbol;
@@ -108,7 +108,7 @@ function InfoDetails() {
     { ticker: fromMintTicker, mint: fromMint },
     { ticker: toMintTicker, mint: toMint },
   ];
-  const route = swapClient.route(fromMint, toMint);
+
   return (
     <div style={{ padding: "15px", width: "250px" }}>
       <div>

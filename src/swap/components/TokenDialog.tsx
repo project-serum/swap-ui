@@ -20,6 +20,7 @@ import { useSwappableTokens } from "./context/TokenList";
 const useStyles = makeStyles(() => ({
   dialogContent: {
     paddingTop: 0,
+    paddingBottom: 0,
   },
   textField: {
     width: "100%",
@@ -98,7 +99,6 @@ export default function TokenDialog({
               onClick={(mint) => {
                 setMint(mint);
                 onClose();
-                setTokenFilter("");
               }}
             />
           ))}
