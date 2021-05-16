@@ -219,7 +219,7 @@ function TokenButton({
   onClick: () => void;
 }) {
   return (
-    <Button onClick={onClick} style={{ width: "116px" }}>
+    <Button onClick={onClick} style={{ minWidth: "116px" }}>
       <TokenIcon mint={mint} style={{ width: "25px", borderRadius: "13px" }} />
       <TokenName mint={mint} />
       <ExpandMore />
@@ -239,7 +239,7 @@ export function TokenIcon({ mint, style }: { mint: PublicKey; style: any }) {
       }}
     >
       {tokenInfo?.logoURI ? (
-        <img alt="token logo" style={style} src={tokenInfo?.logoURI} />
+        <img alt="Logo" style={style} src={tokenInfo?.logoURI} />
       ) : (
         <div style={style}></div>
       )}
