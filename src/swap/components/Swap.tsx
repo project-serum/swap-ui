@@ -18,13 +18,9 @@ import {
   useMarket,
 } from "../context/Dex";
 import { useMint } from "../context/Mint";
-import {
-  useTokenMap,
-  useTokenListContext,
-  SPL_REGISTRY_SOLLET_TAG,
-  SPL_REGISTRY_WORM_TAG,
-} from "../context/TokenList";
+import { useTokenMap } from "../context/TokenList";
 import { useOwnedTokenAccount } from "../context/Token";
+import { useCanSwap } from "../context/Swap";
 import TokenDialog from "./TokenDialog";
 import { SettingsButton } from "./Settings";
 import { InfoLabel } from "./Info";
@@ -253,32 +249,9 @@ function SwapButton() {
   const toMarket = useMarket(
     route && route.markets ? route.markets[1] : undefined
   );
-  const { wormholeMap, solletMap } = useTokenListContext();
+  const canSwap = useCanSwap();
 
-  // True iff the button should be activated.
-  const enabled =
-    // Mints are distinct.
-    fromMint.equals(toMint) === false &&
-    // Wallet is connected.
-    swapClient.program.provider.wallet.publicKey !== null &&
-    // Trade amounts greater than zero.
-    fromAmount > 0 &&
-    toAmount > 0 &&
-    // Trade route exists.
-    route !== null &&
-    // Wormhole <-> native markets must have the wormhole token as the
-    // *from* address since they're one-sided markets.
-    (route.kind !== "wormhole-native" ||
-      wormholeMap
-        .get(fromMint.toString())
-        ?.tags?.includes(SPL_REGISTRY_WORM_TAG) !== undefined) &&
-    // Wormhole <-> sollet markets must have the sollet token as the
-    // *from* address since they're one sided markets.
-    (route.kind !== "wormhole-sollet" ||
-      solletMap
-        .get(fromMint.toString())
-        ?.tags?.includes(SPL_REGISTRY_SOLLET_TAG) !== undefined);
-
+  // Click handler.
   const sendSwapTransaction = async () => {
     if (!fromMintInfo || !toMintInfo) {
       throw new Error("Unable to calculate mint decimals");
@@ -316,7 +289,7 @@ function SwapButton() {
       variant="contained"
       className={styles.swapButton}
       onClick={sendSwapTransaction}
-      disabled={!enabled}
+      disabled={!canSwap}
     >
       Swap
     </Button>

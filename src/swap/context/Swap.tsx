@@ -2,7 +2,12 @@ import React, { useContext, useState } from "react";
 import * as assert from "assert";
 import { PublicKey } from "@solana/web3.js";
 import { SRM_MINT, USDC_MINT } from "../utils/pubkeys";
-import { useFairRoute } from "./Dex";
+import { useFairRoute, useRouteVerbose, useDexContext } from "./Dex";
+import {
+  useTokenListContext,
+  SPL_REGISTRY_SOLLET_TAG,
+  SPL_REGISTRY_WORM_TAG,
+} from "./TokenList";
 
 const DEFAULT_SLIPPAGE_PERCENT = 0.5;
 
@@ -130,4 +135,39 @@ function _useSwapFair(
   const fairRoute = useFairRoute(fromMint, toMint);
   const fair = fairOverride === null ? fairRoute : fairOverride;
   return fair;
+}
+
+// Returns true if the user can swap with the current context.
+export function useCanSwap(): boolean {
+  const { fromMint, toMint, fromAmount, toAmount } = useSwapContext();
+  const { swapClient } = useDexContext();
+  const { wormholeMap, solletMap } = useTokenListContext();
+  const route = useRouteVerbose(fromMint, toMint);
+  if (route === null) {
+    return false;
+  }
+
+  return (
+    // Mints are distinct.
+    fromMint.equals(toMint) === false &&
+    // Wallet is connected.
+    swapClient.program.provider.wallet.publicKey !== null &&
+    // Trade amounts greater than zero.
+    fromAmount > 0 &&
+    toAmount > 0 &&
+    // Trade route exists.
+    route !== null &&
+    // Wormhole <-> native markets must have the wormhole token as the
+    // *from* address since they're one-sided markets.
+    (route.kind !== "wormhole-native" ||
+      wormholeMap
+        .get(fromMint.toString())
+        ?.tags?.includes(SPL_REGISTRY_WORM_TAG) !== undefined) &&
+    // Wormhole <-> sollet markets must have the sollet token as the
+    // *from* address since they're one sided markets.
+    (route.kind !== "wormhole-sollet" ||
+      solletMap
+        .get(fromMint.toString())
+        ?.tags?.includes(SPL_REGISTRY_SOLLET_TAG) !== undefined)
+  );
 }
