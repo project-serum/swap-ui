@@ -378,9 +378,6 @@ function wormholeNativeMarket(
 
 // Returns the market address of the 1-1 sollet<->wormhole swap market if it
 // exists. Otherwise, returns null.
-//
-// TODO: swap transactions dont work for wormhole yet, since the client
-//       doesnt do  any wormhole checks.
 async function wormholeSolletMarket(
   conn: Connection,
   fromMint: PublicKey,
