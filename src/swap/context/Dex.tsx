@@ -18,7 +18,7 @@ import {
   WORM_USDC_MARKET,
   WORM_USDT_MARKET,
   WORM_MARKET_BASE,
-} from "../../utils/pubkeys";
+} from "../utils/pubkeys";
 import { useTokenMap, useTokenListContext } from "./TokenList";
 import { fetchSolletInfo, requestWormholeSwapMarketIfNeeded } from "./Sollet";
 

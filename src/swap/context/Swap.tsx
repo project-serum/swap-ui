@@ -1,7 +1,7 @@
 import React, { useContext, useState } from "react";
 import * as assert from "assert";
 import { PublicKey } from "@solana/web3.js";
-import { SRM_MINT, USDC_MINT } from "../../utils/pubkeys";
+import { SRM_MINT, USDC_MINT } from "../utils/pubkeys";
 import { useFairRoute } from "./Dex";
 
 const DEFAULT_SLIPPAGE_PERCENT = 0.5;

@@ -15,7 +15,7 @@ import {
   Tab,
 } from "@material-ui/core";
 import { TokenIcon } from "./Swap";
-import { useSwappableTokens } from "./context/TokenList";
+import { useSwappableTokens } from "../context/TokenList";
 
 const useStyles = makeStyles(() => ({
   dialogContent: {

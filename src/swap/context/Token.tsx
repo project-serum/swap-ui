@@ -1,7 +1,7 @@
 import React, { useContext, useState, useEffect } from "react";
 import { PublicKey } from "@solana/web3.js";
 import { AccountInfo as TokenAccount } from "@solana/spl-token";
-import { getOwnedTokenAccounts } from "../../utils/tokens";
+import { getOwnedTokenAccounts } from "../utils/tokens";
 
 const _TokenContext = React.createContext<TokenContext | null>(null);
 

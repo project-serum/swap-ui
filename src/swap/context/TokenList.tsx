@@ -1,6 +1,6 @@
 import React, { useContext, useMemo } from "react";
 import { TokenInfo } from "@solana/spl-token-registry";
-import { USDC_MINT, USDT_MINT } from "../../utils/pubkeys";
+import { USDC_MINT, USDT_MINT } from "../utils/pubkeys";
 
 type TokenListContext = {
   tokenMap: Map<string, TokenInfo>;

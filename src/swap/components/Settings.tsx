@@ -30,11 +30,11 @@ import {
 import { ToggleButton } from "@material-ui/lab";
 import { SettingsOutlined as Settings, Close } from "@material-ui/icons";
 import PopupState, { bindTrigger, bindPopover } from "material-ui-popup-state";
-import { useSwapContext, useSwapFair } from "./context/Swap";
-import { useMarket, useOpenOrders, useDexContext } from "./context/Dex";
-import { useTokenMap } from "./context/TokenList";
-import { useMint } from "./context/Mint";
-import { useOwnedTokenAccount } from "./context/Token";
+import { useSwapContext, useSwapFair } from "../context/Swap";
+import { useMarket, useOpenOrders, useDexContext } from "../context/Dex";
+import { useTokenMap } from "../context/TokenList";
+import { useMint } from "../context/Mint";
+import { useOwnedTokenAccount } from "../context/Token";
 
 const useStyles = makeStyles((theme) => ({
   tab: {
