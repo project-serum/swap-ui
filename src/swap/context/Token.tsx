@@ -3,6 +3,11 @@ import { PublicKey } from "@solana/web3.js";
 import { AccountInfo as TokenAccount } from "@solana/spl-token";
 import { getOwnedTokenAccounts } from "../utils/tokens";
 
+export type TokenContext = {
+  ownedTokenAccounts:
+    | { publicKey: PublicKey; account: TokenAccount }[]
+    | undefined;
+};
 const _TokenContext = React.createContext<TokenContext | null>(null);
 
 export function TokenContextProvider(props: any) {
@@ -30,12 +35,6 @@ export function TokenContextProvider(props: any) {
     </_TokenContext.Provider>
   );
 }
-
-export type TokenContext = {
-  ownedTokenAccounts:
-    | { publicKey: PublicKey; account: TokenAccount }[]
-    | undefined;
-};
 
 // Null => none exists.
 // Undefined => loading.

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { PublicKey } from "@solana/web3.js";
 import { MintInfo } from "@solana/spl-token";
 import { BN } from "@project-serum/anchor";
@@ -83,6 +83,12 @@ export default function OpenOrdersDialog({
 function OpenOrdersAccounts() {
   const styles = useStyles();
   const openOrders = useOpenOrders();
+  const openOrdersEntries: Array<[PublicKey, OpenOrders[]]> = useMemo(() => {
+    return Array.from(openOrders.entries()).map(([market, oo]) => [
+      new PublicKey(market),
+      oo,
+    ]);
+  }, [openOrders]);
   return (
     <TableContainer component={Paper} elevation={0}>
       <Table className={styles.table} aria-label="simple table">
@@ -99,11 +105,11 @@ function OpenOrdersAccounts() {
           </TableRow>
         </TableHead>
         <TableBody>
-          {Array.from(openOrders.entries()).map(([market, oos]) => {
+          {openOrdersEntries.map(([market, oos]) => {
             return (
               <OpenOrdersRow
-                key={market}
-                market={new PublicKey(market)}
+                key={market.toString()}
+                market={market}
                 openOrders={oos}
               />
             );
