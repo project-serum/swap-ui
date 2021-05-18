@@ -27,8 +27,6 @@ type DexContext = {
   openOrders: Map<string, Array<OpenOrders>>;
   marketCache: Map<string, Market>;
   setMarketCache: (c: Map<string, Market>) => void;
-  orderbookCache: Map<string, Orderbook>;
-  setOrderbookCache: (c: Map<string, Orderbook>) => void;
   swapClient: SwapClient;
 };
 const _DexContext = React.createContext<DexContext | null>(null);
@@ -38,9 +36,6 @@ export function DexContextProvider(props: any) {
     new Map()
   );
   const [marketCache, setMarketCache] = useState<Map<string, Market>>(
-    new Map()
-  );
-  const [orderbookCache, setOrderbookCache] = useState<Map<string, Orderbook>>(
     new Map()
   );
   const swapClient = props.swapClient;
@@ -114,8 +109,6 @@ export function DexContextProvider(props: any) {
         openOrders: ooAccounts,
         marketCache,
         setMarketCache,
-        orderbookCache,
-        setOrderbookCache,
         swapClient,
       }}
     >
@@ -171,15 +164,16 @@ export function useMarket(market?: PublicKey): Market | undefined {
 
 // Lazy load the orderbook for a given market.
 export function useOrderbook(market?: PublicKey): Orderbook | undefined {
-  const { swapClient, orderbookCache, setOrderbookCache } = useDexContext();
+  const { swapClient } = useDexContext();
   const marketClient = useMarket(market);
+  const [refresh, setRefresh] = useState(0);
 
   const asyncOrderbook = useAsync(async () => {
     if (!market || !marketClient) {
       return undefined;
     }
-    if (orderbookCache.get(market.toString())) {
-      return orderbookCache.get(market.toString());
+    if (_ORDERBOOK_CACHE.get(market.toString())) {
+      return _ORDERBOOK_CACHE.get(market.toString());
     }
 
     const [bids, asks] = await Promise.all([
@@ -192,12 +186,86 @@ export function useOrderbook(market?: PublicKey): Orderbook | undefined {
       asks,
     };
 
-    const cache = new Map(orderbookCache);
-    cache.set(market.toString(), orderbook);
-    setOrderbookCache(cache);
+    _ORDERBOOK_CACHE.set(market.toString(), orderbook);
 
     return orderbook;
-  }, [swapClient.program.provider.connection, market, marketClient]);
+  }, [refresh, swapClient.program.provider.connection, market, marketClient]);
+
+  // Stream in bids updates.
+  useEffect(() => {
+    let listener: number | undefined;
+    if (marketClient?.bidsAddress) {
+      listener = swapClient.program.provider.connection.onAccountChange(
+        marketClient?.bidsAddress,
+        (info) => {
+          const bids = OrderbookSide.decode(marketClient, info.data);
+          const orderbook = _ORDERBOOK_CACHE.get(
+            marketClient.address.toString()
+          );
+          const oldBestBid = orderbook?.bids.items(true).next().value;
+          const newBestBid = bids.items(true).next().value;
+          if (
+            orderbook &&
+            oldBestBid &&
+            newBestBid &&
+            oldBestBid.price !== newBestBid.price
+          ) {
+            orderbook.bids = bids;
+            setRefresh((r) => r + 1);
+          }
+        }
+      );
+    }
+    return () => {
+      if (listener) {
+        swapClient.program.provider.connection.removeAccountChangeListener(
+          listener
+        );
+      }
+    };
+  }, [
+    marketClient,
+    marketClient?.bidsAddress,
+    swapClient.program.provider.connection,
+  ]);
+
+  // Stream in asks updates.
+  useEffect(() => {
+    let listener: number | undefined;
+    if (marketClient?.asksAddress) {
+      listener = swapClient.program.provider.connection.onAccountChange(
+        marketClient?.asksAddress,
+        (info) => {
+          const asks = OrderbookSide.decode(marketClient, info.data);
+          const orderbook = _ORDERBOOK_CACHE.get(
+            marketClient.address.toString()
+          );
+          const oldBestOffer = orderbook?.asks.items(false).next().value;
+          const newBestOffer = asks.items(false).next().value;
+          if (
+            orderbook &&
+            oldBestOffer &&
+            newBestOffer &&
+            oldBestOffer.price !== newBestOffer.price
+          ) {
+            orderbook.asks = asks;
+            setRefresh((r) => r + 1);
+          }
+        }
+      );
+    }
+    return () => {
+      if (listener) {
+        swapClient.program.provider.connection.removeAccountChangeListener(
+          listener
+        );
+      }
+    };
+  }, [
+    marketClient,
+    marketClient?.bidsAddress,
+    swapClient.program.provider.connection,
+  ]);
 
   if (asyncOrderbook.result) {
     return asyncOrderbook.result;
@@ -205,6 +273,8 @@ export function useOrderbook(market?: PublicKey): Orderbook | undefined {
 
   return undefined;
 }
+
+const _ORDERBOOK_CACHE = new Map<string, Orderbook>();
 
 export function useMarketName(market: PublicKey): string | null {
   const tokenMap = useTokenMap();
