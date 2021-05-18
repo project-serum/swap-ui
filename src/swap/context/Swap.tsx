@@ -1,7 +1,14 @@
-import React, { useContext, useState } from "react";
 import * as assert from "assert";
+import React, { useContext, useState } from "react";
+import { useAsync } from "react-async-hook";
 import { PublicKey } from "@solana/web3.js";
-import { SRM_MINT, USDC_MINT } from "../utils/pubkeys";
+import {
+  Token,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+  TOKEN_PROGRAM_ID,
+} from "@solana/spl-token";
+import { Market } from "@project-serum/serum";
+import { SRM_MINT, USDC_MINT, USDT_MINT } from "../utils/pubkeys";
 import { useFairRoute, useRouteVerbose, useDexContext } from "./Dex";
 import {
   useTokenListContext,
@@ -42,6 +49,10 @@ export type SwapContext = {
   fairOverride: number | null;
   setFairOverride: (n: number | null) => void;
 
+  // The referral *owner* address. Associated token accounts must be created,
+  // first, for this to be used.
+  referral?: PublicKey;
+
   // True if all newly created market accounts should be closed in the
   // same user flow (ideally in the same transaction).
   isClosingNewAccounts: boolean;
@@ -55,10 +66,10 @@ export function SwapContextProvider(props: any) {
   const [fromAmount, _setFromAmount] = useState(props.fromAmount ?? 0);
   const [toAmount, _setToAmount] = useState(props.toAmount ?? 0);
   const [isClosingNewAccounts, setIsClosingNewAccounts] = useState(false);
-  // Percent units.
   const [slippage, setSlippage] = useState(DEFAULT_SLIPPAGE_PERCENT);
   const [fairOverride, setFairOverride] = useState<number | null>(null);
   const fair = _useSwapFair(fromMint, toMint, fairOverride);
+  const referral = props.referral;
 
   assert.ok(slippage >= 0);
 
@@ -107,6 +118,7 @@ export function SwapContextProvider(props: any) {
         setFairOverride,
         isClosingNewAccounts,
         setIsClosingNewAccounts,
+        referral,
       }}
     >
       {props.children}
@@ -170,4 +182,34 @@ export function useCanSwap(): boolean {
         .get(fromMint.toString())
         ?.tags?.includes(SPL_REGISTRY_SOLLET_TAG) !== undefined)
   );
+}
+
+export function useReferral(fromMarket?: Market): PublicKey | undefined {
+  const { referral } = useSwapContext();
+  const asyncReferral = useAsync(async () => {
+    if (!referral) {
+      return undefined;
+    }
+    if (!fromMarket) {
+      return undefined;
+    }
+    if (
+      !fromMarket.quoteMintAddress.equals(USDC_MINT) &&
+      !fromMarket.quoteMintAddress.equals(USDT_MINT)
+    ) {
+      return undefined;
+    }
+
+    return Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      fromMarket.quoteMintAddress,
+      referral
+    );
+  }, [fromMarket]);
+
+  if (!asyncReferral.result) {
+    return undefined;
+  }
+  return asyncReferral.result;
 }

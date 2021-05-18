@@ -18,6 +18,7 @@ export default function Swap({
   toMint,
   fromAmount,
   toAmount,
+  referral,
 }: {
   provider: Provider;
   tokenList: TokenListContainer;
@@ -25,6 +26,7 @@ export default function Swap({
   toMint?: PublicKey;
   fromAmount?: number;
   toAmount?: number;
+  referral?: PublicKey;
   style?: any;
 }) {
   const swapClient = new SwapClient(provider, tokenList);
@@ -37,6 +39,7 @@ export default function Swap({
             toMint={toMint}
             fromAmount={fromAmount}
             toAmount={toAmount}
+            referral={referral}
           >
             <SwapCard style={style} />
           </SwapContextProvider>

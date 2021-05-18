@@ -1,13 +1,13 @@
 {
   "name": "@project-serum/swap-ui",
-  "version": "0.1.0-alpha.8",
+  "version": "0.1.0-alpha.9",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "homepage": ".",
   "dependencies": {
     "react-async-hook": "^3.6.2",
     "@project-serum/serum": "^0.13.34",
-    "@project-serum/swap": "^0.1.0-alpha.8",
+    "@project-serum/swap": "^0.1.0-alpha.9",
     "@solana/spl-token": "^0.1.4"
   },
   "peerDependencies": {

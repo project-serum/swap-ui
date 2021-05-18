@@ -19,7 +19,7 @@ import {
 } from "../context/Dex";
 import { useTokenMap } from "../context/TokenList";
 import { useMint, useOwnedTokenAccount } from "../context/Token";
-import { useCanSwap } from "../context/Swap";
+import { useCanSwap, useReferral } from "../context/Swap";
 import TokenDialog from "./TokenDialog";
 import { SettingsButton } from "./Settings";
 import { InfoLabel } from "./Info";
@@ -249,6 +249,7 @@ function SwapButton() {
     route && route.markets ? route.markets[1] : undefined
   );
   const canSwap = useCanSwap();
+  const referral = useReferral(fromMarket);
 
   // Click handler.
   const sendSwapTransaction = async () => {
@@ -273,6 +274,7 @@ function SwapButton() {
       toMint,
       amount,
       minExpectedSwapAmount,
+      referral,
       // Pass in the below parameters so that the client doesn't perform
       // wasteful network requests when we already have the data.
       fromMarket,

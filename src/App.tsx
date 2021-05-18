@@ -146,7 +146,6 @@ class NotifyingProvider extends Provider {
     opts?: ConfirmOptions
   ): Promise<TransactionSignature> {
     try {
-      // A production implementation should handle error notifications as well.
       const txSig = await super.send(tx, signers, opts);
       this.onTransaction(txSig);
       return txSig;
