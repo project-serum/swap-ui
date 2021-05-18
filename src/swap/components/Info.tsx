@@ -10,7 +10,7 @@ import PopupState, { bindTrigger, bindPopover } from "material-ui-popup-state";
 import { PublicKey } from "@solana/web3.js";
 import { useTokenMap } from "../context/TokenList";
 import { useSwapContext, useSwapFair } from "../context/Swap";
-import { useMint } from "../context/Mint";
+import { useMint } from "../context/Token";
 import { useRoute, useMarketName, useFair } from "../context/Dex";
 
 const useStyles = makeStyles((theme) => ({

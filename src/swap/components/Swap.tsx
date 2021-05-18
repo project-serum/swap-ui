@@ -17,9 +17,8 @@ import {
   useRouteVerbose,
   useMarket,
 } from "../context/Dex";
-import { useMint } from "../context/Mint";
 import { useTokenMap } from "../context/TokenList";
-import { useOwnedTokenAccount } from "../context/Token";
+import { useMint, useOwnedTokenAccount } from "../context/Token";
 import { useCanSwap } from "../context/Swap";
 import TokenDialog from "./TokenDialog";
 import { SettingsButton } from "./Settings";

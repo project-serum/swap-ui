@@ -4,7 +4,6 @@ import { Provider } from "@project-serum/anchor";
 import { Swap as SwapClient } from "@project-serum/swap";
 import { SwapContextProvider } from "./context/Swap";
 import { DexContextProvider } from "./context/Dex";
-import { MintContextProvider } from "./context/Mint";
 import { TokenListContextProvider } from "./context/TokenList";
 import { TokenContextProvider } from "./context/Token";
 import SwapCard from "./components/Swap";
@@ -31,20 +30,18 @@ export default function Swap({
   const swapClient = new SwapClient(provider, tokenList);
   return (
     <TokenListContextProvider tokenList={tokenList}>
-      <MintContextProvider provider={provider}>
-        <TokenContextProvider provider={provider}>
-          <DexContextProvider swapClient={swapClient}>
-            <SwapContextProvider
-              fromMint={fromMint}
-              toMint={toMint}
-              fromAmount={fromAmount}
-              toAmount={toAmount}
-            >
-              <SwapCard style={style} />
-            </SwapContextProvider>
-          </DexContextProvider>
-        </TokenContextProvider>
-      </MintContextProvider>
+      <TokenContextProvider provider={provider}>
+        <DexContextProvider swapClient={swapClient}>
+          <SwapContextProvider
+            fromMint={fromMint}
+            toMint={toMint}
+            fromAmount={fromAmount}
+            toAmount={toAmount}
+          >
+            <SwapCard style={style} />
+          </SwapContextProvider>
+        </DexContextProvider>
+      </TokenContextProvider>
     </TokenListContextProvider>
   );
 }

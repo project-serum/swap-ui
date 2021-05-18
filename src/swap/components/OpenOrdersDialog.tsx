@@ -24,8 +24,7 @@ import {
 import { Close } from "@material-ui/icons";
 import { useMarket, useOpenOrders, useDexContext } from "../context/Dex";
 import { useTokenMap } from "../context/TokenList";
-import { useMint } from "../context/Mint";
-import { useOwnedTokenAccount } from "../context/Token";
+import { useMint, useOwnedTokenAccount } from "../context/Token";
 
 const useStyles = makeStyles((theme) => ({
   table: {},
