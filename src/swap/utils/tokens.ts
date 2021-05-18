@@ -3,7 +3,10 @@
 
 import * as BufferLayout from "buffer-layout";
 import { BN } from "@project-serum/anchor";
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import {
+  TOKEN_PROGRAM_ID,
+  AccountInfo as TokenAccount,
+} from "@solana/spl-token";
 import { Connection, PublicKey } from "@solana/web3.js";
 import * as bs58 from "bs58";
 
@@ -60,22 +63,23 @@ export async function getOwnedTokenAccounts(
     });
 }
 
-export const ACCOUNT_LAYOUT = BufferLayout.struct([
+const ACCOUNT_LAYOUT = BufferLayout.struct([
   BufferLayout.blob(32, "mint"),
   BufferLayout.blob(32, "owner"),
   BufferLayout.nu64("amount"),
   BufferLayout.blob(93),
 ]);
 
-export const MINT_LAYOUT = BufferLayout.struct([
+const MINT_LAYOUT = BufferLayout.struct([
   BufferLayout.blob(44),
   BufferLayout.u8("decimals"),
   BufferLayout.blob(37),
 ]);
 
-export function parseTokenAccountData(data: Buffer) {
+export function parseTokenAccountData(data: Buffer): TokenAccount {
   // @ts-ignore
   let { mint, owner, amount } = ACCOUNT_LAYOUT.decode(data);
+  // @ts-ignore
   return {
     mint: new PublicKey(mint),
     owner: new PublicKey(owner),

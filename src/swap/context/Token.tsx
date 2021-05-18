@@ -1,4 +1,5 @@
 import React, { useContext, useState, useEffect } from "react";
+import * as assert from "assert";
 import { useAsync } from "react-async-hook";
 import { Provider } from "@project-serum/anchor";
 import { PublicKey, Account } from "@solana/web3.js";
@@ -8,35 +9,37 @@ import {
   Token,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
-import { getOwnedTokenAccounts } from "../utils/tokens";
+import { getOwnedTokenAccounts, parseTokenAccountData } from "../utils/tokens";
 
 export type TokenContext = {
   provider: Provider;
-  ownedTokenAccounts:
-    | { publicKey: PublicKey; account: TokenAccount }[]
-    | undefined;
 };
 const _TokenContext = React.createContext<TokenContext | null>(null);
 
 export function TokenContextProvider(props: any) {
   const provider = props.provider;
-  const [ownedTokenAccounts, setOwnedTokenAccounts] = useState(undefined);
+  const [, setRefresh] = useState(0);
 
   // Fetch all the owned token accounts for the wallet.
   useEffect(() => {
     if (!provider.wallet.publicKey) {
-      setOwnedTokenAccounts(undefined);
+      _OWNED_TOKEN_ACCOUNTS_CACHE.length = 0;
+      setRefresh((r) => r + 1);
       return;
     }
     getOwnedTokenAccounts(provider.connection, provider.wallet.publicKey).then(
-      setOwnedTokenAccounts
+      (accs) => {
+        if (accs) {
+          _OWNED_TOKEN_ACCOUNTS_CACHE.push(...accs);
+          setRefresh((r) => r + 1);
+        }
+      }
     );
   }, [provider.wallet.publicKey, provider.connection]);
 
   return (
     <_TokenContext.Provider
       value={{
-        ownedTokenAccounts,
         provider,
       }}
     >
@@ -58,20 +61,11 @@ function useTokenContext() {
 export function useOwnedTokenAccount(
   mint?: PublicKey
 ): { publicKey: PublicKey; account: TokenAccount } | null | undefined {
-  const ctx = useTokenContext();
-  if (mint === undefined) {
-    return mint;
-  }
-  if (ctx.ownedTokenAccounts === undefined) {
-    return undefined;
-  }
-  const tokenAccounts = ctx.ownedTokenAccounts.filter((account) =>
-    account.account.mint.equals(mint)
+  const { provider } = useTokenContext();
+  const [, setRefresh] = useState(0);
+  const tokenAccounts = _OWNED_TOKEN_ACCOUNTS_CACHE.filter(
+    (account) => mint && account.account.mint.equals(mint)
   );
-
-  if (tokenAccounts.length === 0) {
-    return null;
-  }
 
   // Take the account with the most tokens in it.
   tokenAccounts.sort((a, b) =>
@@ -81,11 +75,43 @@ export function useOwnedTokenAccount(
       ? 1
       : 0
   );
-  return tokenAccounts[0];
-}
 
-// Cache storing all previously fetched mint infos.
-const _MINT_CACHE = new Map<string, MintInfo>();
+  const tokenAccount = tokenAccounts[0];
+
+  // Stream updates when the balance changes.
+  useEffect(() => {
+    let listener: number;
+    if (tokenAccount) {
+      listener = provider.connection.onAccountChange(
+        tokenAccount.publicKey,
+        (info) => {
+          const token = parseTokenAccountData(info.data);
+          if (token.amount !== tokenAccount.account.amount) {
+            const index = _OWNED_TOKEN_ACCOUNTS_CACHE.indexOf(tokenAccount);
+            assert.ok(index >= 0);
+            _OWNED_TOKEN_ACCOUNTS_CACHE[index].account = token;
+            setRefresh((r) => r + 1);
+          }
+        }
+      );
+    }
+    return () => {
+      if (listener) {
+        provider.connection.removeAccountChangeListener(listener);
+      }
+    };
+  }, [provider.connection, tokenAccount]);
+
+  if (mint === undefined) {
+    return undefined;
+  }
+
+  if (tokenAccounts.length === 0) {
+    return null;
+  }
+
+  return tokenAccount;
+}
 
 export function useMint(mint?: PublicKey): MintInfo | undefined | null {
   const { provider } = useTokenContext();
@@ -114,3 +140,12 @@ export function useMint(mint?: PublicKey): MintInfo | undefined | null {
   }
   return undefined;
 }
+
+// Cache storing all token accounts for the connected wallet provider.
+const _OWNED_TOKEN_ACCOUNTS_CACHE: Array<{
+  publicKey: PublicKey;
+  account: TokenAccount;
+}> = [];
+
+// Cache storing all previously fetched mint infos.
+const _MINT_CACHE = new Map<string, MintInfo>();
