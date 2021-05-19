@@ -22,6 +22,8 @@ import {
 import { useTokenMap, useTokenListContext } from "./TokenList";
 import { fetchSolletInfo, requestWormholeSwapMarketIfNeeded } from "./Sollet";
 
+export const BASE_TAKER_FEE_BPS = 0.0022;
+
 type DexContext = {
   // Maps market address to open orders accounts.
   openOrders: Map<string, Array<OpenOrders>>;
@@ -293,7 +295,7 @@ export function useMarketName(market: PublicKey): string | null {
 }
 
 // Fair price for a given market, as defined by the mid.
-export function useFair(market?: PublicKey): number | undefined {
+export function useBbo(market?: PublicKey): Bbo | undefined {
   const orderbook = useOrderbook(market);
   if (orderbook === undefined) {
     return undefined;
@@ -301,13 +303,13 @@ export function useFair(market?: PublicKey): number | undefined {
   const bestBid = orderbook.bids.items(true).next().value;
   const bestOffer = orderbook.asks.items(false).next().value;
   if (!bestBid) {
-    return bestOffer.price;
+    return { bestOffer: bestOffer.price };
   }
   if (!bestOffer) {
-    return bestBid.price;
+    return { bestBid: bestBid.price };
   }
   const mid = (bestBid.price + bestOffer.price) / 2.0;
-  return mid;
+  return { bestBid: bestBid.price, bestOffer: bestOffer.price, mid };
 }
 
 // Fair price for a theoretical toMint/fromMint market. I.e., the number
@@ -318,28 +320,33 @@ export function useFairRoute(
   toMint: PublicKey
 ): number | undefined {
   const route = useRoute(fromMint, toMint);
-  const fromFair = useFair(route ? route[0] : undefined);
+  const fromBbo = useBbo(route ? route[0] : undefined);
   const fromMarket = useMarket(route ? route[0] : undefined);
-  const toFair = useFair(route ? route[1] : undefined);
+  const toBbo = useBbo(route ? route[1] : undefined);
 
   if (route === null) {
     return undefined;
   }
 
-  if (route.length === 1 && fromFair !== undefined) {
+  if (route.length === 1 && fromBbo !== undefined) {
     if (fromMarket === undefined) {
       return undefined;
     }
     if (fromMarket?.baseMintAddress.equals(fromMint)) {
-      return 1.0 / fromFair;
+      return fromBbo.bestBid && 1.0 / fromBbo.bestBid;
     } else {
-      return fromFair;
+      return fromBbo.bestOffer && fromBbo.bestOffer;
     }
   }
-  if (fromFair === undefined || toFair === undefined) {
+  if (
+    fromBbo === undefined ||
+    fromBbo.bestBid === undefined ||
+    toBbo === undefined ||
+    toBbo.bestOffer === undefined
+  ) {
     return undefined;
   }
-  return toFair / fromFair;
+  return toBbo.bestOffer / fromBbo.bestBid;
 }
 
 export function useRoute(
@@ -525,3 +532,9 @@ async function deriveWormholeMarket(
     padToTwo(version);
   return await PublicKey.createWithSeed(WORM_MARKET_BASE, seed, DEX_PID);
 }
+
+type Bbo = {
+  bestBid?: number;
+  bestOffer?: number;
+  mid?: number;
+};
