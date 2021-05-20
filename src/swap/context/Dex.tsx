@@ -27,17 +27,12 @@ export const BASE_TAKER_FEE_BPS = 0.0022;
 type DexContext = {
   // Maps market address to open orders accounts.
   openOrders: Map<string, Array<OpenOrders>>;
-  marketCache: Map<string, Market>;
-  setMarketCache: (c: Map<string, Market>) => void;
   swapClient: SwapClient;
 };
 const _DexContext = React.createContext<DexContext | null>(null);
 
 export function DexContextProvider(props: any) {
   const [ooAccounts, setOoAccounts] = useState<Map<string, Array<OpenOrders>>>(
-    new Map()
-  );
-  const [marketCache, setMarketCache] = useState<Map<string, Market>>(
     new Map()
   );
   const swapClient = props.swapClient;
@@ -73,31 +68,29 @@ export function DexContextProvider(props: any) {
           "Too many markets. Please file an issue to update this"
         );
       }
-      const marketAccounts = (
+      (
         await anchor.utils.getMultipleAccounts(
           swapClient.program.provider.connection,
           // @ts-ignore
           [...markets].map((m) => new PublicKey(m))
         )
-      ).map((programAccount) => {
-        return {
-          publicKey: programAccount?.publicKey,
-          account: new Market(
-            Market.getLayout(DEX_PID).decode(programAccount?.account.data),
-            -1, // Not used so don't bother fetching.
-            -1, // Not used so don't bother fetching.
-            swapClient.program.provider.opts,
-            DEX_PID
-          ),
-        };
-      });
-      setMarketCache((marketCache) => {
-        const newMarketCache = new Map(marketCache);
-        marketAccounts.forEach((m) => {
-          newMarketCache.set(m.publicKey!.toString(), m.account);
+      )
+        .map((programAccount) => {
+          return {
+            publicKey: programAccount?.publicKey,
+            account: new Market(
+              Market.getLayout(DEX_PID).decode(programAccount?.account.data),
+              -1, // Not used so don't bother fetching.
+              -1, // Not used so don't bother fetching.
+              swapClient.program.provider.opts,
+              DEX_PID
+            ),
+          };
+        })
+        .forEach((m) => {
+          _MARKET_CACHE.set(m.publicKey!.toString(), m.account);
         });
-        return newMarketCache;
-      });
+
       setOoAccounts(newOoAccounts);
     });
   }, [
@@ -109,8 +102,6 @@ export function DexContextProvider(props: any) {
     <_DexContext.Provider
       value={{
         openOrders: ooAccounts,
-        marketCache,
-        setMarketCache,
         swapClient,
       }}
     >
@@ -134,28 +125,25 @@ export function useOpenOrders(): Map<string, Array<OpenOrders>> {
 
 // Lazy load a given market.
 export function useMarket(market?: PublicKey): Market | undefined {
-  const ctx = useDexContext();
+  const { swapClient } = useDexContext();
 
   const asyncMarket = useAsync(async () => {
     if (!market) {
       return undefined;
     }
-    if (ctx.marketCache.get(market.toString())) {
-      return ctx.marketCache.get(market.toString());
+    if (_MARKET_CACHE.get(market.toString())) {
+      return _MARKET_CACHE.get(market.toString());
     }
     const marketClient = await Market.load(
-      ctx.swapClient.program.provider.connection,
+      swapClient.program.provider.connection,
       market,
       undefined,
       DEX_PID
     );
 
-    let cache = new Map(ctx.marketCache);
-    cache.set(market.toString(), marketClient);
-    ctx.setMarketCache(cache);
-
+    _MARKET_CACHE.set(market.toString(), marketClient);
     return marketClient;
-  }, [ctx.swapClient.program.provider.connection, market]);
+  }, [swapClient.program.provider.connection, market]);
 
   if (asyncMarket.result) {
     return asyncMarket.result;
@@ -275,8 +263,6 @@ export function useOrderbook(market?: PublicKey): Orderbook | undefined {
 
   return undefined;
 }
-
-const _ORDERBOOK_CACHE = new Map<string, Orderbook>();
 
 export function useMarketName(market: PublicKey): string | null {
   const tokenMap = useTokenMap();
@@ -538,3 +524,6 @@ type Bbo = {
   bestOffer?: number;
   mid?: number;
 };
+
+const _ORDERBOOK_CACHE = new Map<string, Orderbook>();
+const _MARKET_CACHE = new Map<string, Market>();
