@@ -154,6 +154,22 @@ class NotifyingProvider extends Provider {
       return "";
     }
   }
+
+  async sendAll(
+    txs: Array<{ tx: Transaction; signers: Array<Account | undefined> }>,
+    opts?: ConfirmOptions
+  ): Promise<Array<TransactionSignature>> {
+    try {
+      const txSigs = await super.sendAll(txs, opts);
+      txSigs.forEach((sig) => {
+        this.onTransaction(sig);
+      });
+      return txSigs;
+    } catch (err) {
+      this.onTransaction(undefined, err);
+      return [];
+    }
+  }
 }
 
 export default App;
