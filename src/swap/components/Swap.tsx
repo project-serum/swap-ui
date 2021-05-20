@@ -265,11 +265,6 @@ function SwapButton() {
         .divn(100),
       decimals: fromMintInfo.decimals,
     };
-    console.log(
-      "using exchange rate: ",
-      minExchangeRate,
-      minExchangeRate.rate.toNumber()
-    );
     const fromOpenOrders = fromMarket
       ? openOrders.get(fromMarket?.address.toString())
       : undefined;
