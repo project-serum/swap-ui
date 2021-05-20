@@ -78,12 +78,18 @@ export function DexContextProvider(props: any) {
         .map((programAccount) => {
           return {
             publicKey: programAccount?.publicKey,
-            account: new Market(
-              Market.getLayout(DEX_PID).decode(programAccount?.account.data),
-              -1, // Not used so don't bother fetching.
-              -1, // Not used so don't bother fetching.
-              swapClient.program.provider.opts,
-              DEX_PID
+            account: new Promise<Market>((resolve) =>
+              resolve(
+                new Market(
+                  Market.getLayout(DEX_PID).decode(
+                    programAccount?.account.data
+                  ),
+                  -1, // Not used so don't bother fetching.
+                  -1, // Not used so don't bother fetching.
+                  swapClient.program.provider.opts,
+                  DEX_PID
+                )
+              )
             ),
           };
         })
@@ -134,7 +140,7 @@ export function useMarket(market?: PublicKey): Market | undefined {
     if (_MARKET_CACHE.get(market.toString())) {
       return _MARKET_CACHE.get(market.toString());
     }
-    const marketClient = await Market.load(
+    const marketClient = Market.load(
       swapClient.program.provider.connection,
       market,
       undefined,
@@ -166,15 +172,17 @@ export function useOrderbook(market?: PublicKey): Orderbook | undefined {
       return _ORDERBOOK_CACHE.get(market.toString());
     }
 
-    const [bids, asks] = await Promise.all([
-      marketClient.loadBids(swapClient.program.provider.connection),
-      marketClient.loadAsks(swapClient.program.provider.connection),
-    ]);
+    const orderbook = new Promise<Orderbook>(async (resolve) => {
+      const [bids, asks] = await Promise.all([
+        marketClient.loadBids(swapClient.program.provider.connection),
+        marketClient.loadAsks(swapClient.program.provider.connection),
+      ]);
 
-    const orderbook = {
-      bids,
-      asks,
-    };
+      resolve({
+        bids,
+        asks,
+      });
+    });
 
     _ORDERBOOK_CACHE.set(market.toString(), orderbook);
 
@@ -187,9 +195,9 @@ export function useOrderbook(market?: PublicKey): Orderbook | undefined {
     if (marketClient?.bidsAddress) {
       listener = swapClient.program.provider.connection.onAccountChange(
         marketClient?.bidsAddress,
-        (info) => {
+        async (info) => {
           const bids = OrderbookSide.decode(marketClient, info.data);
-          const orderbook = _ORDERBOOK_CACHE.get(
+          const orderbook = await _ORDERBOOK_CACHE.get(
             marketClient.address.toString()
           );
           const oldBestBid = orderbook?.bids.items(true).next().value;
@@ -225,9 +233,9 @@ export function useOrderbook(market?: PublicKey): Orderbook | undefined {
     if (marketClient?.asksAddress) {
       listener = swapClient.program.provider.connection.onAccountChange(
         marketClient?.asksAddress,
-        (info) => {
+        async (info) => {
           const asks = OrderbookSide.decode(marketClient, info.data);
-          const orderbook = _ORDERBOOK_CACHE.get(
+          const orderbook = await _ORDERBOOK_CACHE.get(
             marketClient.address.toString()
           );
           const oldBestOffer = orderbook?.asks.items(false).next().value;
@@ -525,5 +533,5 @@ type Bbo = {
   mid?: number;
 };
 
-const _ORDERBOOK_CACHE = new Map<string, Orderbook>();
-const _MARKET_CACHE = new Map<string, Market>();
+const _ORDERBOOK_CACHE = new Map<string, Promise<Orderbook>>();
+const _MARKET_CACHE = new Map<string, Promise<Market>>();
