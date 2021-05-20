@@ -130,7 +130,7 @@ export function useMint(mint?: PublicKey): MintInfo | undefined | null {
       TOKEN_PROGRAM_ID,
       new Account()
     );
-    const mintInfo =  mintClient.getMintInfo();
+    const mintInfo = mintClient.getMintInfo();
     _MINT_CACHE.set(mint.toString(), mintInfo);
     return mintInfo;
   }, [provider.connection, mint]);
