@@ -11,7 +11,7 @@ import { PublicKey } from "@solana/web3.js";
 import { useTokenMap } from "../context/TokenList";
 import { useSwapContext, useSwapFair } from "../context/Swap";
 import { useMint } from "../context/Token";
-import { useRoute, useMarketName, useFair } from "../context/Dex";
+import { useRoute, useMarketName, useBbo } from "../context/Dex";
 
 const useStyles = makeStyles((theme) => ({
   infoLabel: {
@@ -163,7 +163,7 @@ function InfoDetails() {
 
 function MarketRoute({ market }: { market: PublicKey }) {
   const marketName = useMarketName(market);
-  const fair = useFair(market);
+  const bbo = useBbo(market);
   return (
     <div
       style={{
@@ -179,7 +179,9 @@ function MarketRoute({ market }: { market: PublicKey }) {
       >
         {marketName}
       </Link>
-      <code style={{ marginLeft: "10px" }}>{fair ? fair.toFixed(6) : "-"}</code>
+      <code style={{ marginLeft: "10px" }}>
+        {bbo && bbo.mid ? bbo.mid.toFixed(6) : "-"}
+      </code>
     </div>
   );
 }

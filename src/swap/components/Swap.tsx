@@ -10,12 +10,13 @@ import {
   TextField,
 } from "@material-ui/core";
 import { ExpandMore } from "@material-ui/icons";
-import { useSwapContext } from "../context/Swap";
+import { useSwapContext, useSwapFair } from "../context/Swap";
 import {
   useDexContext,
   useOpenOrders,
   useRouteVerbose,
   useMarket,
+  BASE_TAKER_FEE_BPS,
 } from "../context/Dex";
 import { useTokenMap } from "../context/TokenList";
 import { useMint, useOwnedTokenAccount } from "../context/Token";
@@ -229,14 +230,8 @@ function TokenName({ mint }: { mint: PublicKey }) {
 
 function SwapButton() {
   const styles = useStyles();
-  const {
-    fromMint,
-    toMint,
-    fromAmount,
-    toAmount,
-    slippage,
-    isClosingNewAccounts,
-  } = useSwapContext();
+  const { fromMint, toMint, fromAmount, slippage, isClosingNewAccounts } =
+    useSwapContext();
   const { swapClient } = useDexContext();
   const fromMintInfo = useMint(fromMint);
   const toMintInfo = useMint(toMint);
@@ -250,19 +245,26 @@ function SwapButton() {
   );
   const canSwap = useCanSwap();
   const referral = useReferral(fromMarket);
+  const fair = useSwapFair();
 
   // Click handler.
   const sendSwapTransaction = async () => {
     if (!fromMintInfo || !toMintInfo) {
       throw new Error("Unable to calculate mint decimals");
     }
+    if (!fair) {
+      throw new Error("Invalid fair");
+    }
     const amount = new BN(fromAmount).mul(
       new BN(10).pow(new BN(fromMintInfo.decimals))
     );
-    const minExpectedSwapAmount = new BN(toAmount)
-      .mul(new BN(10).pow(new BN(toMintInfo.decimals)))
-      .muln(100 - slippage)
-      .divn(100);
+    const minExchangeRate = {
+      rate: new BN(10 ** toMintInfo.decimals * (1 - BASE_TAKER_FEE_BPS))
+        .divn(fair)
+        .muln(100 - slippage)
+        .divn(100),
+      decimals: fromMintInfo.decimals,
+    };
     const fromOpenOrders = fromMarket
       ? openOrders.get(fromMarket?.address.toString())
       : undefined;
@@ -273,7 +275,7 @@ function SwapButton() {
       fromMint,
       toMint,
       amount,
-      minExpectedSwapAmount,
+      minExchangeRate,
       referral,
       // Pass in the below parameters so that the client doesn't perform
       // wasteful network requests when we already have the data.

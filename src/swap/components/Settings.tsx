@@ -73,6 +73,11 @@ function SettingsDetails() {
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const fair = useSwapFair();
   const { swapClient } = useDexContext();
+
+  const setSlippageHandler = (value?: number) => {
+    setSlippage(!value || value < 0 ? 0 : value);
+  };
+
   return (
     <div style={{ padding: "15px", width: "305px" }}>
       <Typography color="textSecondary" style={{ fontWeight: "bold" }}>
@@ -85,7 +90,7 @@ function SettingsDetails() {
             type="number"
             placeholder="Error tolerance percentage"
             value={slippage}
-            onChange={(e) => setSlippage(parseFloat(e.target.value))}
+            onChange={(e) => setSlippageHandler(parseFloat(e.target.value))}
             style={{
               display: "flex",
               justifyContent: "center",
