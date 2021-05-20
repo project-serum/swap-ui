@@ -5,7 +5,7 @@ import { Provider } from "@project-serum/anchor";
 // @ts-ignore
 import Wallet from "@project-serum/sol-wallet-adapter";
 import {
-  Account,
+  Signer,
   ConfirmOptions,
   Connection,
   Transaction,
@@ -142,7 +142,7 @@ class NotifyingProvider extends Provider {
 
   async send(
     tx: Transaction,
-    signers?: Array<Account | undefined>,
+    signers?: Array<Signer | undefined>,
     opts?: ConfirmOptions
   ): Promise<TransactionSignature> {
     try {
@@ -156,7 +156,7 @@ class NotifyingProvider extends Provider {
   }
 
   async sendAll(
-    txs: Array<{ tx: Transaction; signers: Array<Account | undefined> }>,
+    txs: Array<{ tx: Transaction; signers: Array<Signer | undefined> }>,
     opts?: ConfirmOptions
   ): Promise<Array<TransactionSignature>> {
     try {
