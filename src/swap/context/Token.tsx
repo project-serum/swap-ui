@@ -130,7 +130,7 @@ export function useMint(mint?: PublicKey): MintInfo | undefined | null {
       TOKEN_PROGRAM_ID,
       new Account()
     );
-    const mintInfo = await mintClient.getMintInfo();
+    const mintInfo = mintClient.getMintInfo();
     _MINT_CACHE.set(mint.toString(), mintInfo);
     return mintInfo;
   }, [provider.connection, mint]);
@@ -148,4 +148,4 @@ const _OWNED_TOKEN_ACCOUNTS_CACHE: Array<{
 }> = [];
 
 // Cache storing all previously fetched mint infos.
-const _MINT_CACHE = new Map<string, MintInfo>();
+const _MINT_CACHE = new Map<string, Promise<MintInfo>>();
