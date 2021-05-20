@@ -1540,17 +1540,13 @@
     schema-utils "^2.6.5"
     source-map "^0.7.3"
 
-"@project-serum/anchor@^0.5.1-beta.2":
-  version "0.5.1-beta.2"
-  resolved "https://registry.yarnpkg.com/@project-serum/anchor/-/anchor-0.5.1-beta.2.tgz#358ca148c82df088346d9dbd12ed46f229aee7d6"
-  integrity sha512-FECLlXAPF2FwhJtZTItqXnClCNPZ0xJlFW4HgNrOUuPInGqwX7i9KwE/43Gjf7tQW2tzcspjtfIkZalThcqc5A==
+"@project-serum/anchor@^0.6.0-beta.2":
+  version "0.6.0-beta.2"
+  resolved "https://registry.yarnpkg.com/@project-serum/anchor/-/anchor-0.6.0-beta.2.tgz#ba537fb51fa19bcdacbc77b5b2a5c88990a52716"
+  integrity sha512-mBCUz8SylTs0niomGk6UgGiJT9cxDZoPwSTyhe2rvPw0JpATG/5SDrPJaRZekFxQuTgQVsG1ButkgZBYD/Gt3g==
   dependencies:
-    "@project-serum/borsh" "^0.2.1"
-    "@solana/web3.js" "^1.2.0"
-    "@types/bn.js" "^4.11.6"
-    "@types/bs58" "^4.0.1"
-    "@types/crypto-hash" "^1.1.2"
-    "@types/pako" "^1.0.1"
+    "@project-serum/borsh" "^0.2.2"
+    "@solana/web3.js" "^1.11.0"
     base64-js "^1.5.1"
     bn.js "^5.1.2"
     bs58 "^4.0.1"
@@ -1563,10 +1559,10 @@
     pako "^2.0.3"
     snake-case "^3.0.4"
 
-"@project-serum/borsh@^0.2.1":
-  version "0.2.1"
-  resolved "https://registry.yarnpkg.com/@project-serum/borsh/-/borsh-0.2.1.tgz#1d0dc4ccf8be307ddd1e88fcfb6f94b9aa26f857"
-  integrity sha512-cE5z9iaYN5nC2L8ARslKdyA31EFV6hW2ROriLfNDBqwzbDCCx0uigUdNOBZ4FHEwE12B78vUEQGywVASWXzcKQ==
+"@project-serum/borsh@^0.2.2":
+  version "0.2.2"
+  resolved "https://registry.yarnpkg.com/@project-serum/borsh/-/borsh-0.2.2.tgz#63e558f2d6eb6ab79086bf499dea94da3182498f"
+  integrity sha512-Ms+aWmGVW6bWd3b0+MWwoaYig2QD0F90h0uhr7AzY3dpCb5e2S6RsRW02vFTfa085pY2VLB7nTZNbFECQ1liTg==
   dependencies:
     bn.js "^5.1.2"
     buffer-layout "^1.2.0"
@@ -1588,15 +1584,13 @@
     bs58 "^4.0.1"
     eventemitter3 "^4.0.4"
 
-"@project-serum/swap@^0.1.0-alpha.12":
-  version "0.1.0-alpha.12"
-  resolved "https://registry.yarnpkg.com/@project-serum/swap/-/swap-0.1.0-alpha.12.tgz#085055c1bbed66d8e9a9f8da9e23d2315ad09181"
-  integrity sha512-iIFBbwkIVAJaUPx3Wn240gba6tpAtBHHfcEbInz+O+enCUUHCCIi96SY1R6nBHKNWiH2qY+nlPfXR62Lra/cyw==
+"@project-serum/swap@^0.1.0-alpha.14":
+  version "0.1.0-alpha.14"
+  resolved "https://registry.yarnpkg.com/@project-serum/swap/-/swap-0.1.0-alpha.14.tgz#f97fdc3d7782c8cc86130d25c4a2d68d5d196110"
+  integrity sha512-F9YrsN2kx3CaitSR9MfjvdoePhjB7+7Pt9TkDfqCn44BMpffiONmc0mb7PCRTQXjdhBPRTZwTSwLYh6Xj4msyA==
   dependencies:
-    "@project-serum/anchor" "^0.5.1-beta.2"
     "@project-serum/serum" "^0.13.34"
     "@solana/spl-token" "^0.1.3"
-    "@solana/spl-token-registry" "^0.2.86"
     base64-js "^1.5.1"
     bn.js "^5.1.2"
 
@@ -1643,9 +1637,9 @@
     "@sinonjs/commons" "^1.7.0"
 
 "@solana/spl-token-registry@^0.2.86":
-  version "0.2.86"
-  resolved "https://registry.yarnpkg.com/@solana/spl-token-registry/-/spl-token-registry-0.2.86.tgz#6ca8172d0f0c38ffc3dae174e3ba72674fd2ad66"
-  integrity sha512-/ySaKRMRmCSHxiWonlFn+07Mj3wze6zpB6RvY169GQAiO+6RGDZPUP5kbdSHP9NXAInG9LyKjd6rEU5ymFfG3A==
+  version "0.2.102"
+  resolved "https://registry.yarnpkg.com/@solana/spl-token-registry/-/spl-token-registry-0.2.102.tgz#e313a098474bb8b1fab5af74fce2644a046dbf01"
+  integrity sha512-9x18nNNWwOwXWYA+l5IJJoEPsa3gtE067sxnNoZd2b1xNrJKvpm7V8PrtIMy5ASt8Dn8ILZvKaytZZ7PDohOlw==
   dependencies:
     cross-fetch "3.0.6"
 
@@ -1684,7 +1678,27 @@
     tweetnacl "^1.0.0"
     ws "^7.0.0"
 
-"@solana/web3.js@^1.2.0", "@solana/web3.js@^1.9.1":
+"@solana/web3.js@^1.10.1", "@solana/web3.js@^1.11.0":
+  version "1.12.0"
+  resolved "https://registry.yarnpkg.com/@solana/web3.js/-/web3.js-1.12.0.tgz#c2ecf4b1c677a8881c698871537ae7bfc7cae7b6"
+  integrity sha512-0jb7EDeocFKQOumScE9Rj4Lry5oVpBap4oGPG2yE3n7Dz4nhFUoEjDbhwEliN75M/4wJV69aPHIm2ZPeJ9rUsQ==
+  dependencies:
+    "@babel/runtime" "^7.12.5"
+    bn.js "^5.0.0"
+    borsh "^0.4.0"
+    bs58 "^4.0.1"
+    buffer "6.0.1"
+    buffer-layout "^1.2.0"
+    crypto-hash "^1.2.2"
+    jayson "^3.4.4"
+    js-sha3 "^0.8.0"
+    node-fetch "^2.6.1"
+    rpc-websockets "^7.4.2"
+    secp256k1 "^4.0.2"
+    superstruct "^0.14.2"
+    tweetnacl "^1.0.0"
+
+"@solana/web3.js@^1.9.1":
   version "1.10.1"
   resolved "https://registry.yarnpkg.com/@solana/web3.js/-/web3.js-1.10.1.tgz#b3e7197a2628c26c54227963741b1788bb67f7ff"
   integrity sha512-5zepm+AaVfC6uao/WxKT7SlemqgGEp+x7XUv+018RURIx+XEcF+G2ZgjrIbjy5OoXJyfz+wGw8Or2fxsypderA==
@@ -1900,7 +1914,7 @@
   dependencies:
     "@babel/types" "^7.3.0"
 
-"@types/bn.js@^4.11.6":
+"@types/bn.js@^4.11.5":
   version "4.11.6"
   resolved "https://registry.yarnpkg.com/@types/bn.js/-/bn.js-4.11.6.tgz#c306c70d9358aaea33cd4eda092a742b9505967c"
   integrity sha512-pqr857jrp2kPuO9uRjZ3PwnJTjoQy+fcdxvBTvHm6dkmEL9q+hDD/2j/0ELOBPtPnS8LjCX0gI9nbl8lVkadpg==
@@ -1920,13 +1934,6 @@
   integrity sha512-ePPA/JuI+X0vb+gSWlPKOY0NdNAie/rPUqX2GUPpbZwiKTkSPhjXWuee47E4MtE54QVzGCQMQkAL6JhV2E1+cQ==
   dependencies:
     "@types/node" "*"
-
-"@types/crypto-hash@^1.1.2":
-  version "1.1.2"
-  resolved "https://registry.yarnpkg.com/@types/crypto-hash/-/crypto-hash-1.1.2.tgz#5a993deb0e6ba7c42f86eaa65d9bf563378f4569"
-  integrity sha512-sOmi+4Go2XKodLV4+lfP+5QMQ+6ZYqRJhK8D/n6xsxIUvlerEulmU9S4Lo02pXCH3qPBeJXEy+g8ZERktDJLSg==
-  dependencies:
-    crypto-hash "*"
 
 "@types/eslint@^7.2.6":
   version "7.2.6"
@@ -2036,11 +2043,6 @@
   version "2.4.0"
   resolved "https://registry.yarnpkg.com/@types/normalize-package-data/-/normalize-package-data-2.4.0.tgz#e486d0d97396d79beedd0a6e33f4534ff6b4973e"
   integrity sha512-f5j5b/Gf71L+dbqxIpQ4Z2WlmI/mPJ0fOkGGmFgtb6sAu97EPczzbS3/tJKxmcYDj55OX6ssqwDAWOHIYDRDGA==
-
-"@types/pako@^1.0.1":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@types/pako/-/pako-1.0.1.tgz#33b237f3c9aff44d0f82fe63acffa4a365ef4a61"
-  integrity sha512-GdZbRSJ3Cv5fiwT6I0SQ3ckeN2PWNqxd26W9Z2fCK1tGrrasGy4puvNFtnddqH9UJFMQYXxEuuB7B8UK+LLwSg==
 
 "@types/parse-json@^4.0.0":
   version "4.0.0"
@@ -3133,6 +3135,16 @@ boolbase@^1.0.0, boolbase@~1.0.0:
   resolved "https://registry.yarnpkg.com/boolbase/-/boolbase-1.0.0.tgz#68dff5fbe60c51eb37725ea9e3ed310dcc1e776e"
   integrity sha1-aN/1++YMUes3cl6p4+0xDcwed24=
 
+borsh@^0.4.0:
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/borsh/-/borsh-0.4.0.tgz#9dd6defe741627f1315eac2a73df61421f6ddb9f"
+  integrity sha512-aX6qtLya3K0AkT66CmYWCCDr77qsE9arV05OmdFpmat9qu8Pg9J5tBUPDztAW5fNh/d/MyVG/OYziP52Ndzx1g==
+  dependencies:
+    "@types/bn.js" "^4.11.5"
+    bn.js "^5.0.0"
+    bs58 "^4.0.0"
+    text-encoding-utf-8 "^1.0.2"
+
 brace-expansion@^1.1.7:
   version "1.1.11"
   resolved "https://registry.yarnpkg.com/brace-expansion/-/brace-expansion-1.1.11.tgz#3c7fcbf529d87226f3d2f52b966ff5271eb441dd"
@@ -3256,7 +3268,7 @@ browserslist@^4.0.0, browserslist@^4.12.0, browserslist@^4.14.5, browserslist@^4
     escalade "^3.1.1"
     node-releases "^1.1.70"
 
-bs58@^4.0.1:
+bs58@^4.0.0, bs58@^4.0.1:
   version "4.0.1"
   resolved "https://registry.yarnpkg.com/bs58/-/bs58-4.0.1.tgz#be161e76c354f6f788ae4071f63f34e8c4f0a42a"
   integrity sha1-vhYedsNU9veIrkBx9j806MTwpCo=
@@ -4039,7 +4051,7 @@ crypto-browserify@^3.11.0:
     randombytes "^2.0.0"
     randomfill "^1.0.3"
 
-crypto-hash@*, crypto-hash@^1.2.2, crypto-hash@^1.3.0:
+crypto-hash@^1.2.2, crypto-hash@^1.3.0:
   version "1.3.0"
   resolved "https://registry.yarnpkg.com/crypto-hash/-/crypto-hash-1.3.0.tgz#b402cb08f4529e9f4f09346c3e275942f845e247"
   integrity sha512-lyAZ0EMyjDkVvz8WOeVnuCPvKVBXcMv1l5SVqO1yC7PzTwrD/pPje/BIRbWhMoPe436U+Y2nD7f5bFx0kt+Sbg==
@@ -11435,6 +11447,11 @@ test-exclude@^6.0.0:
     "@istanbuljs/schema" "^0.1.2"
     glob "^7.1.4"
     minimatch "^3.0.4"
+
+text-encoding-utf-8@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/text-encoding-utf-8/-/text-encoding-utf-8-1.0.2.tgz#585b62197b0ae437e3c7b5d0af27ac1021e10d13"
+  integrity sha512-8bw4MY9WjdsD2aMtO0OzOCY3pXGYNx2d2FfHRVUKkiCPDWjKuOlhLVASS+pD7VkLTVjW268LYJHwsnPFlBpbAg==
 
 text-table@0.2.0, text-table@^0.2.0:
   version "0.2.0"
