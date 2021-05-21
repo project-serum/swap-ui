@@ -1,6 +1,7 @@
 import React, { useContext, useState, useEffect } from "react";
 import { useAsync } from "react-async-hook";
 import { TokenInfo } from "@solana/spl-token-registry";
+import { MintLayout } from "@solana/spl-token";
 import { Connection, PublicKey } from "@solana/web3.js";
 import * as anchor from "@project-serum/anchor";
 import { Swap as SwapClient } from "@project-serum/swap";
@@ -21,6 +22,7 @@ import {
 } from "../utils/pubkeys";
 import { useTokenMap, useTokenListContext } from "./TokenList";
 import { fetchSolletInfo, requestWormholeSwapMarketIfNeeded } from "./Sollet";
+import { setMintCache } from "./Token";
 
 export const BASE_TAKER_FEE_BPS = 0.0022;
 
@@ -37,11 +39,11 @@ export function DexContextProvider(props: any) {
   );
   const swapClient = props.swapClient;
 
-  // Two operations:
+  // Three operations:
   //
   // 1. Fetch all open orders accounts for the connected wallet.
   // 2. Batch fetch all market accounts for those open orders.
-  //
+  // 3. Batch fetch all mints associated with the markets.
   useEffect(() => {
     if (!swapClient.program.provider.wallet.publicKey) {
       setOoAccounts(new Map());
@@ -68,36 +70,55 @@ export function DexContextProvider(props: any) {
           "Too many markets. Please file an issue to update this"
         );
       }
-      (
-        await anchor.utils.getMultipleAccounts(
-          swapClient.program.provider.connection,
-          // @ts-ignore
-          [...markets].map((m) => new PublicKey(m))
-        )
-      )
-        .map((programAccount) => {
-          return {
-            publicKey: programAccount?.publicKey,
-            account: new Promise<Market>((resolve) =>
-              resolve(
-                new Market(
-                  Market.getLayout(DEX_PID).decode(
-                    programAccount?.account.data
-                  ),
-                  -1, // Not used so don't bother fetching.
-                  -1, // Not used so don't bother fetching.
-                  swapClient.program.provider.opts,
-                  DEX_PID
-                )
-              )
-            ),
-          };
-        })
-        .forEach((m) => {
-          _MARKET_CACHE.set(m.publicKey!.toString(), m.account);
-        });
-
+      const multipleMarkets = await anchor.utils.getMultipleAccounts(
+        swapClient.program.provider.connection,
+        Array.from(markets.values()).map((m) => new PublicKey(m))
+      );
+      const marketClients = multipleMarkets.map((programAccount) => {
+        return {
+          publicKey: programAccount?.publicKey,
+          account: new Market(
+            Market.getLayout(DEX_PID).decode(programAccount?.account.data),
+            -1, // Not used so don't bother fetching.
+            -1, // Not used so don't bother fetching.
+            swapClient.program.provider.opts,
+            DEX_PID
+          ),
+        };
+      });
+      marketClients.forEach((m) => {
+        _MARKET_CACHE.set(
+          m.publicKey!.toString(),
+          new Promise<Market>((resolve) => resolve(m.account))
+        );
+      });
       setOoAccounts(newOoAccounts);
+
+      // Batch fetch all the mints, since we know we'll need them at some
+      // point.
+      const mintPubkeys = Array.from(
+        new Set<string>(
+          marketClients
+            .map((m) => [
+              m.account.baseMintAddress.toString(),
+              m.account.quoteMintAddress.toString(),
+            ])
+            .flat()
+        ).values()
+      ).map((pk) => new PublicKey(pk));
+
+      if (mintPubkeys.length > 100) {
+        // Punt request chunking until there's user demand.
+        throw new Error("Too many mints. Please file an issue to update this");
+      }
+
+      const mints = await anchor.utils.getMultipleAccounts(
+        swapClient.program.provider.connection,
+        mintPubkeys
+      );
+      mints.forEach((mint) => {
+        setMintCache(mint!.publicKey, MintLayout.decode(mint!.account.data));
+      });
     });
   }, [
     swapClient.program.provider.connection,

@@ -141,6 +141,10 @@ export function useMint(mint?: PublicKey): MintInfo | undefined | null {
   return undefined;
 }
 
+export function setMintCache(pk: PublicKey, account: MintInfo) {
+  _MINT_CACHE.set(pk.toString(), new Promise((resolve) => resolve(account)));
+}
+
 // Cache storing all token accounts for the connected wallet provider.
 const _OWNED_TOKEN_ACCOUNTS_CACHE: Array<{
   publicKey: PublicKey;
