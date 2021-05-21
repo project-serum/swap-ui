@@ -161,12 +161,22 @@ export function useMarket(market?: PublicKey): Market | undefined {
     if (_MARKET_CACHE.get(market.toString())) {
       return _MARKET_CACHE.get(market.toString());
     }
-    const marketClient = Market.load(
-      swapClient.program.provider.connection,
-      market,
-      undefined,
-      DEX_PID
-    );
+
+    const marketClient = new Promise<Market>(async (resolve) => {
+      const marketAccount =
+        await swapClient.program.provider.connection.getAccountInfo(market);
+      if (marketAccount === null) {
+        throw new Error("Invalid market");
+      }
+      const marketClient = new Market(
+        Market.getLayout(DEX_PID).decode(marketAccount.data),
+        -1,
+        -1,
+        swapClient.program.provider.opts,
+        DEX_PID
+      );
+      resolve(marketClient);
+    });
 
     _MARKET_CACHE.set(market.toString(), marketClient);
     return marketClient;
