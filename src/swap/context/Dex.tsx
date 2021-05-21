@@ -70,13 +70,11 @@ export function DexContextProvider(props: any) {
           "Too many markets. Please file an issue to update this"
         );
       }
-      const marketClients = (
-        await anchor.utils.getMultipleAccounts(
-          swapClient.program.provider.connection,
-          // @ts-ignore
-          [...markets].map((m) => new PublicKey(m))
-        )
-      ).map((programAccount) => {
+      const multipleMarkets = await anchor.utils.getMultipleAccounts(
+        swapClient.program.provider.connection,
+        Array.from(markets.values()).map((m) => new PublicKey(m))
+      );
+      const marketClients = multipleMarkets.map((programAccount) => {
         return {
           publicKey: programAccount?.publicKey,
           account: new Market(
@@ -98,17 +96,16 @@ export function DexContextProvider(props: any) {
 
       // Batch fetch all the mints, since we know we'll need them at some
       // point.
-      const mintPubkeys = [
-        // @ts-ignore
-        ...new Set(
+      const mintPubkeys = Array.from(
+        new Set<string>(
           marketClients
             .map((m) => [
               m.account.baseMintAddress.toString(),
               m.account.quoteMintAddress.toString(),
             ])
             .flat()
-        ),
-      ].map((pk) => new PublicKey(pk));
+        ).values()
+      ).map((pk) => new PublicKey(pk));
 
       if (mintPubkeys.length > 100) {
         // Punt request chunking until there's user demand.
