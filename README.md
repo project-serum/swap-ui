@@ -4,8 +4,7 @@
 [![npm](https://img.shields.io/npm/v/@project-serum/swap-ui.svg)](https://www.npmjs.com/package/@project-serum/swap-ui)
 
 A reusable React component for swapping on the Serum DEX. The Solana program can be
-found [here](https://github.com/project-serum/swap). An example application is also
-provided in this repository.
+found [here](https://github.com/project-serum/swap).
 
 ## Developing
 
@@ -15,20 +14,21 @@ provided in this repository.
 yarn
 ```
 
-#### Run the example app
-
-```
-yarn start
-```
-
-#### Build the `@project-serum/swap-ui` package for npm
-
-```
-yarn build:npm
-```
-
-#### Build the example app for GitHub pages
+#### Build
 
 ```
 yarn build
+```
+
+## Run the example app
+
+For local development and educational purposes, a minimal React app is provided
+in the `example/` subdirectory.
+
+To run, change directories via `cd example/` and start the app.
+
+### Start the app
+
+```
+yarn start
 ```

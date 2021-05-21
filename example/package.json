@@ -1,0 +1,30 @@
+{
+  "name": "@project-serum/swap-ui-example",
+  "version": "0.1.0",
+  "homepage": ".",
+  "private": true,
+  "scripts": {
+    "start": "../node_modules/.bin/react-app-rewired start",
+    "build": "../node_modules/.bin/react-app-rewired build",
+    "deploy": "gh-pages -d build/",
+    "build:npm": "rm -rf dist && tsc --build tsconfig.npm.json"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
