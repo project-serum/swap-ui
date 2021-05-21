@@ -15,3 +15,4 @@ yarn-error.log*
 example/build/
 example/node_modules/
 example/yarn.lock
+docs/
