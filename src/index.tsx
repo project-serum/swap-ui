@@ -1,4 +1,4 @@
-import { ReactElement } from 'react';
+import { ReactElement } from "react";
 import { PublicKey } from "@solana/web3.js";
 import { TokenListContainer } from "@solana/spl-token-registry";
 import { Provider } from "@project-serum/anchor";
@@ -17,7 +17,7 @@ import SwapCard from "./components/Swap";
  * ```javascript
  * <Swap provider={provider} tokenList={tokenList} />
  * ```
-*
+ *
  * All of the complexity of communicating with the Serum DEX and managing
  * its data is handled internally by the component.
  *
