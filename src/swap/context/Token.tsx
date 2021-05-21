@@ -142,7 +142,6 @@ export function useMint(mint?: PublicKey): MintInfo | undefined | null {
 }
 
 export function setMintCache(pk: PublicKey, account: MintInfo) {
-  console.log("setting mint cache", pk.toString(), account);
   _MINT_CACHE.set(pk.toString(), new Promise((resolve) => resolve(account)));
 }
 
