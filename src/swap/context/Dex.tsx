@@ -98,9 +98,8 @@ export function DexContextProvider(props: any) {
 
       // Batch fetch all the mints, since we know we'll need them at some
       // point.
-      //
-      // @ts-ignore
       const mintPubkeys = [
+        // @ts-ignore
         ...new Set(
           marketClients
             .map((m) => [
@@ -110,6 +109,12 @@ export function DexContextProvider(props: any) {
             .flat()
         ),
       ].map((pk) => new PublicKey(pk));
+
+      if (mintPubkeys.length > 100) {
+        // Punt request chunking until there's user demand.
+        throw new Error("Too many mints. Please file an issue to update this");
+      }
+
       const mints = await anchor.utils.getMultipleAccounts(
         swapClient.program.provider.connection,
         mintPubkeys
