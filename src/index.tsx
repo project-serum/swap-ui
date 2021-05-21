@@ -1,3 +1,4 @@
+import { ReactElement } from 'react';
 import { PublicKey } from "@solana/web3.js";
 import { TokenListContainer } from "@solana/spl-token-registry";
 import { Provider } from "@project-serum/anchor";
@@ -9,10 +10,21 @@ import { TokenContextProvider } from "./context/Token";
 import SwapCard from "./components/Swap";
 
 /**
- * The package exports a single `Swap` component that can be embedded into
- * applications.
+ * A`Swap` component that can be embedded into applications. To use,
+ * one can, minimally, provide a provider and token list to the component.
+ * For example,
+ *
+ * ```javascript
+ * <Swap provider={provider} tokenList={tokenList} />
+ * ```
+*
+ * All of the complexity of communicating with the Serum DEX and managing
+ * its data is handled internally by the component.
+ *
+ * For information on other properties like earning referrals, see the
+ * [[SwapProps]] documentation.
  */
-export default function Swap(props: SwapProps) {
+export function Swap(props: SwapProps): ReactElement {
   const {
     style,
     provider,
@@ -46,7 +58,7 @@ export default function Swap(props: SwapProps) {
 /**
  * Properties for the `Swap` Component.
  */
-type SwapProps = {
+export type SwapProps = {
   /**
    * Wallet and network provider. Apps can use a `Provider` subclass to hook
    * into all transactions intitiated by the component.
@@ -93,3 +105,5 @@ type SwapProps = {
    */
   style?: any;
 };
+
+export default Swap;
