@@ -13,24 +13,18 @@ import { useSwapContext, useSwapFair } from "../context/Swap";
 import { useMint } from "../context/Token";
 import { useRoute, useMarketName, useBbo } from "../context/Dex";
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles(() => ({
   infoLabel: {
-    marginTop: "10px",
-    marginBottom: "10px",
+    marginTop: "20px",
+    marginBottom: "20px",
     display: "flex",
-    justifyContent: "space-between",
-    marginLeft: "5px",
-    marginRight: "5px",
-  },
-  fairPriceLabel: {
-    marginRight: "10px",
-    display: "flex",
-    justifyContent: "center",
-    flexDirection: "column",
-    color: theme.palette.text.secondary,
+    justifyContent: "flex-end",
+    alignItems: "center",
   },
   infoButton: {
+    marginLeft: "5px",
     padding: 0,
+    fontSize: "14px",
   },
 }));
 
@@ -47,17 +41,14 @@ export function InfoLabel() {
 
   return (
     <div className={styles.infoLabel}>
-      <Typography color="textSecondary"></Typography>
-      <div style={{ display: "flex" }}>
-        <div className={styles.fairPriceLabel}>
-          {fair !== undefined && toTokenInfo && fromTokenInfo
-            ? `1 ${toTokenInfo.symbol} = ${fair.toFixed(
-                fromMintInfo?.decimals
-              )} ${fromTokenInfo.symbol}`
-            : `-`}
-        </div>
-        <InfoButton />
-      </div>
+      <Typography color="textSecondary" style={{ fontSize: "14px" }}>
+        {fair !== undefined && toTokenInfo && fromTokenInfo
+          ? `1 ${toTokenInfo.symbol} = ${fair.toFixed(
+              fromMintInfo?.decimals
+            )} ${fromTokenInfo.symbol}`
+          : `-`}
+      </Typography>
+      <InfoButton />
     </div>
   );
 }
@@ -74,7 +65,7 @@ function InfoButton() {
               {...bindTrigger(popupState)}
               className={styles.infoButton}
             >
-              <Info />
+              <Info fontSize="small" />
             </IconButton>
             <Popover
               {...bindPopover(popupState)}

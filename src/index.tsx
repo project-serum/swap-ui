@@ -1,3 +1,5 @@
+import "@fontsource/roboto";
+import "./index.css";
 import { ReactElement } from "react";
 import { PublicKey } from "@solana/web3.js";
 import { TokenListContainer } from "@solana/spl-token-registry";
@@ -8,6 +10,11 @@ import { DexContextProvider } from "./context/Dex";
 import { TokenListContextProvider } from "./context/TokenList";
 import { TokenContextProvider } from "./context/Token";
 import SwapCard from "./components/Swap";
+import {
+  createMuiTheme,
+  ThemeOptions,
+  ThemeProvider,
+} from "@material-ui/core/styles";
 
 /**
  * A`Swap` component that can be embedded into applications. To use,
@@ -26,7 +33,10 @@ import SwapCard from "./components/Swap";
  */
 export function Swap(props: SwapProps): ReactElement {
   const {
-    style,
+    containerStyle,
+    contentStyle,
+    swapTokenContainerStyle,
+    materialTheme,
     provider,
     tokenList,
     fromMint,
@@ -36,22 +46,45 @@ export function Swap(props: SwapProps): ReactElement {
     referral,
   } = props;
   const swapClient = new SwapClient(provider, tokenList);
+  const theme = createMuiTheme(
+    materialTheme || {
+      palette: {
+        primary: {
+          main: "#2196F3",
+          contrastText: "#FFFFFF",
+        },
+        secondary: {
+          main: "#E0E0E0",
+          light: "#595959",
+        },
+        error: {
+          main: "#ff6b6b",
+        },
+      },
+    }
+  );
   return (
-    <TokenListContextProvider tokenList={tokenList}>
-      <TokenContextProvider provider={provider}>
-        <DexContextProvider swapClient={swapClient}>
-          <SwapContextProvider
-            fromMint={fromMint}
-            toMint={toMint}
-            fromAmount={fromAmount}
-            toAmount={toAmount}
-            referral={referral}
-          >
-            <SwapCard style={style} />
-          </SwapContextProvider>
-        </DexContextProvider>
-      </TokenContextProvider>
-    </TokenListContextProvider>
+    <ThemeProvider theme={theme}>
+      <TokenListContextProvider tokenList={tokenList}>
+        <TokenContextProvider provider={provider}>
+          <DexContextProvider swapClient={swapClient}>
+            <SwapContextProvider
+              fromMint={fromMint}
+              toMint={toMint}
+              fromAmount={fromAmount}
+              toAmount={toAmount}
+              referral={referral}
+            >
+              <SwapCard
+                containerStyle={containerStyle}
+                contentStyle={contentStyle}
+                swapTokenContainerStyle={swapTokenContainerStyle}
+              />
+            </SwapContextProvider>
+          </DexContextProvider>
+        </TokenContextProvider>
+      </TokenListContextProvider>
+    </ThemeProvider>
   );
 }
 
@@ -101,9 +134,24 @@ export type SwapProps = {
   toAmount?: number;
 
   /**
-   * Style properties to pass through to the component.
+   * Provide custom material-ui theme.
    */
-  style?: any;
+  materialTheme?: ThemeOptions;
+
+  /**
+   * Styling properties for the main container.
+   */
+  containerStyle?: any;
+
+  /**
+   * Styling properties for the content container.
+   */
+  contentStyle?: any;
+
+  /**
+   * Styling properties for the from and to token containers.
+   */
+  swapTokenContainerStyle?: any;
 };
 
 export default Swap;

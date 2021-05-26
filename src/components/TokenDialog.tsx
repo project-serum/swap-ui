@@ -17,19 +17,24 @@ import {
 import { TokenIcon } from "./Swap";
 import { useSwappableTokens } from "../context/TokenList";
 
-const useStyles = makeStyles(() => ({
+const useStyles = makeStyles((theme) => ({
   dialogContent: {
-    paddingTop: 0,
-    paddingBottom: 0,
+    padding: 0,
   },
   textField: {
-    width: "100%",
-    border: "solid 1pt #ccc",
-    borderRadius: "10px",
     marginBottom: "8px",
   },
   tab: {
     minWidth: "134px",
+  },
+  tabSelected: {
+    color: theme.palette.primary.contrastText,
+    fontWeight: 700,
+    backgroundColor: theme.palette.primary.main,
+    borderRadius: "10px",
+  },
+  tabIndicator: {
+    opacity: 0,
   },
 }));
 
@@ -83,11 +88,9 @@ export default function TokenDialog({
           className={styles.textField}
           placeholder={"Search name"}
           value={tokenFilter}
+          fullWidth
+          variant="outlined"
           onChange={(e) => setTokenFilter(e.target.value)}
-          InputProps={{
-            disableUnderline: true,
-            style: { padding: "10px" },
-          }}
         />
       </DialogTitle>
       <DialogContent className={styles.dialogContent} dividers={true}>
@@ -105,10 +108,31 @@ export default function TokenDialog({
         </List>
       </DialogContent>
       <DialogActions>
-        <Tabs value={tabSelection} onChange={(e, v) => setTabSelection(v)}>
-          <Tab value={0} className={styles.tab} label="Main" />
-          <Tab value={1} className={styles.tab} label="Wormhole" />
-          <Tab value={2} className={styles.tab} label="Sollet" />
+        <Tabs
+          value={tabSelection}
+          onChange={(e, v) => setTabSelection(v)}
+          classes={{
+            indicator: styles.tabIndicator,
+          }}
+        >
+          <Tab
+            value={0}
+            className={styles.tab}
+            classes={{ selected: styles.tabSelected }}
+            label="Main"
+          />
+          <Tab
+            value={1}
+            className={styles.tab}
+            classes={{ selected: styles.tabSelected }}
+            label="Wormhole"
+          />
+          <Tab
+            value={2}
+            className={styles.tab}
+            classes={{ selected: styles.tabSelected }}
+            label="Sollet"
+          />
         </Tabs>
       </DialogActions>
     </Dialog>
@@ -124,7 +148,11 @@ function TokenListItem({
 }) {
   const mint = new PublicKey(tokenInfo.address);
   return (
-    <ListItem button onClick={() => onClick(mint)}>
+    <ListItem
+      button
+      onClick={() => onClick(mint)}
+      style={{ padding: "10px 20px" }}
+    >
       <TokenIcon mint={mint} style={{ width: "30px", borderRadius: "15px" }} />
       <TokenName tokenInfo={tokenInfo} />
     </ListItem>
