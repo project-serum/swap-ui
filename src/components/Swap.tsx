@@ -70,6 +70,7 @@ const useStyles = makeStyles((theme) => ({
     marginLeft: "5px",
     display: "flex",
     flexDirection: "column",
+    width: "50%",
   },
   balanceContainer: {
     display: "flex",
