@@ -128,7 +128,6 @@ function SwapHeader() {
         style={{
           fontSize: 18,
           fontWeight: 700,
-          fontFamily: "Roboto Condensed",
         }}
       >
         SWAP
