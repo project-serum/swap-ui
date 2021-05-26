@@ -28,8 +28,8 @@ import { useMint, useOwnedTokenAccount } from "../context/Token";
 
 const useStyles = makeStyles((theme) => ({
   table: {},
-  closeAccountSwitchLabel: {
-    color: theme.palette.text.secondary,
+  closeAccount: {
+    color: theme.palette.error.main,
   },
 }));
 
@@ -40,6 +40,8 @@ export default function OpenOrdersDialog({
   open: boolean;
   onClose: () => void;
 }) {
+  const styles = useStyles();
+
   return (
     <Dialog
       maxWidth="lg"
@@ -51,30 +53,24 @@ export default function OpenOrdersDialog({
         },
       }}
     >
-      <div>
-        <div
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+        }}
+      >
+        <IconButton
+          onClick={onClose}
           style={{
-            height: "24px",
-            display: "flex",
-            justifyContent: "space-between",
+            padding: 10,
           }}
         >
-          <IconButton
-            onClick={onClose}
-            style={{
-              padding: 0,
-              position: "absolute",
-              right: "8px",
-              top: "8px",
-            }}
-          >
-            <Close />
-          </IconButton>
-        </div>
-        <DialogContent style={{ paddingTop: 0 }}>
-          <OpenOrdersAccounts />
-        </DialogContent>
+          <Close />
+        </IconButton>
       </div>
+      <DialogContent style={{ paddingTop: 0 }}>
+        <OpenOrdersAccounts />
+      </DialogContent>
     </Dialog>
   );
 }
@@ -126,6 +122,8 @@ function OpenOrdersRow({
   market: PublicKey;
   openOrders: Array<OpenOrders>;
 }) {
+  const styles = useStyles();
+
   const [ooAccount, setOoAccount] = useState(openOrders[0]);
   const { swapClient } = useDexContext();
   const marketClient = useMarket(market);
@@ -235,9 +233,9 @@ function OpenOrdersRow({
       </TableCell>
       <TableCell align="center">
         <Button
-          color="secondary"
           disabled={closeDisabled}
           onClick={closeOpenOrders}
+          className={styles.closeAccount}
         >
           Close
         </Button>

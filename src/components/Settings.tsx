@@ -11,7 +11,6 @@ import {
   FormControlLabel,
   FormGroup,
 } from "@material-ui/core";
-import { ToggleButton } from "@material-ui/lab";
 import { SettingsOutlined as Settings } from "@material-ui/icons";
 import PopupState, { bindTrigger, bindPopover } from "material-ui-popup-state";
 import { useSwapContext, useSwapFair } from "../context/Swap";
@@ -25,9 +24,26 @@ const useStyles = makeStyles((theme) => ({
   table: {},
   settingsButton: {
     padding: 0,
+    color: theme.palette.primary.main,
   },
   closeAccountSwitchLabel: {
     color: theme.palette.text.secondary,
+  },
+  fairAutoSelected: {
+    backgroundColor: theme.palette.primary.main,
+    padding: "3px 5px",
+    borderRadius: "10px",
+    color: theme.palette.primary.contrastText,
+    fontWeight: 700,
+  },
+  fairAuto: {
+    backgroundColor:
+      theme.palette.type === "dark"
+        ? theme.palette.secondary.light
+        : theme.palette.secondary.main,
+    padding: "3px 5px",
+    borderRadius: "10px",
+    boxShadow: "none",
   },
 }));
 
@@ -56,7 +72,12 @@ export function SettingsButton() {
                 vertical: "top",
                 horizontal: "right",
               }}
-              PaperProps={{ style: { borderRadius: "10px" } }}
+              PaperProps={{
+                style: {
+                  borderRadius: "10px",
+                  boxShadow: "0px 0px 30px 5px rgba(0,0,0,0.075)",
+                },
+              }}
             >
               <SettingsDetails />
             </Popover>
@@ -68,6 +89,8 @@ export function SettingsButton() {
 }
 
 function SettingsDetails() {
+  const styles = useStyles();
+
   const { slippage, setSlippage, fairOverride, setFairOverride } =
     useSwapContext();
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
@@ -80,12 +103,12 @@ function SettingsDetails() {
 
   return (
     <div style={{ padding: "15px", width: "305px" }}>
-      <Typography color="textSecondary" style={{ fontWeight: "bold" }}>
-        Settings
-      </Typography>
-      <div style={{ marginTop: "10px" }}>
-        <div>
-          <Typography color="textSecondary">Slippage tolerance</Typography>
+      <Typography style={{ fontWeight: "bold" }}>Settings</Typography>
+      <div>
+        <div style={{ marginTop: "10px" }}>
+          <Typography color="textSecondary" style={{ fontSize: "12px" }}>
+            Slippage tolerance
+          </Typography>
           <TextField
             type="number"
             placeholder="Error tolerance percentage"
@@ -101,8 +124,10 @@ function SettingsDetails() {
             }}
           />
         </div>
-        <div style={{ marginTop: "5px" }}>
-          <Typography color="textSecondary">Fair price</Typography>
+        <div style={{ marginTop: "10px" }}>
+          <Typography color="textSecondary" style={{ fontSize: "12px" }}>
+            Fair price
+          </Typography>
           <div style={{ display: "flex" }}>
             <TextField
               type="number"
@@ -118,9 +143,9 @@ function SettingsDetails() {
               }}
               disabled={fairOverride === null}
             />
-            <ToggleButton
-              value="bold"
-              selected={fairOverride === null}
+            <Button
+              component="div"
+              variant="contained"
               onClick={() => {
                 if (fair === undefined) {
                   console.error("Fair is undefined");
@@ -132,27 +157,22 @@ function SettingsDetails() {
                   setFairOverride(null);
                 }
               }}
-              style={{
-                paddingTop: "3px",
-                paddingBottom: "3px",
-                paddingLeft: "5px",
-                paddingRight: "5px",
-                borderRadius: "20px",
-              }}
+              className={
+                fairOverride === null
+                  ? styles.fairAutoSelected
+                  : styles.fairAuto
+              }
             >
               Auto
-            </ToggleButton>
+            </Button>
           </div>
         </div>
-        <div style={{ marginTop: "5px" }}>
+        <div style={{ margin: "10px 0px" }}>
           <CloseNewAccountsSwitch />
         </div>
         <Button
-          style={{
-            width: "100%",
-            marginTop: "10px",
-            background: "#e0e0e0",
-          }}
+          variant="contained"
+          fullWidth
           disabled={swapClient.program.provider.wallet.publicKey === null}
           onClick={() => setShowSettingsDialog(true)}
         >

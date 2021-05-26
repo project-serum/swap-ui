@@ -5,11 +5,11 @@ import {
   makeStyles,
   Card,
   Button,
-  Paper,
   Typography,
   TextField,
+  useTheme,
 } from "@material-ui/core";
-import { ExpandMore } from "@material-ui/icons";
+import { ExpandMore, ImportExportRounded } from "@material-ui/icons";
 import { useSwapContext, useSwapFair } from "../context/Swap";
 import {
   useDexContext,
@@ -25,16 +25,12 @@ import TokenDialog from "./TokenDialog";
 import { SettingsButton } from "./Settings";
 import { InfoLabel } from "./Info";
 
-const useStyles = makeStyles(() => ({
+const useStyles = makeStyles((theme) => ({
   card: {
     width: "450px",
-    borderRadius: "10px",
-    border: "solid 1pt #e0e0e0",
-  },
-  cardContent: {
-    marginLeft: "6px",
-    marginRight: "6px",
-    marginBottom: "6px",
+    borderRadius: "16px",
+    boxShadow: "0px 0px 30px 5px rgba(0,0,0,0.075)",
+    padding: "16px",
   },
   tab: {
     width: "50%",
@@ -44,30 +40,78 @@ const useStyles = makeStyles(() => ({
   },
   swapButton: {
     width: "100%",
-    borderRadius: "15px",
+    borderRadius: "10px",
+    backgroundColor: theme.palette.primary.main,
+    color: theme.palette.primary.contrastText,
+    fontSize: 16,
+    fontWeight: 700,
+    padding: "10px",
   },
   swapToFromButton: {
     display: "block",
-    marginLeft: "auto",
-    marginRight: "auto",
+    margin: "10px auto 10px auto",
+    cursor: "pointer",
+  },
+  amountInput: {
+    fontSize: 22,
+    fontWeight: 600,
+  },
+  input: {
+    textAlign: "right",
+  },
+  swapTokenFormContainer: {
+    borderRadius: "10px",
+    boxShadow: "0px 0px 15px 2px rgba(33,150,243,0.1)",
+    display: "flex",
+    justifyContent: "space-between",
+    padding: "10px",
+  },
+  swapTokenSelectorContainer: {
+    marginLeft: "5px",
+    display: "flex",
+    flexDirection: "column",
+  },
+  balanceContainer: {
+    display: "flex",
+    alignItems: "center",
+    fontSize: "14px",
+  },
+  maxButton: {
+    marginLeft: 10,
+    color: theme.palette.primary.main,
+    fontWeight: 700,
+    fontSize: "12px",
+    cursor: "pointer",
+  },
+  tokenButton: {
+    display: "flex",
+    alignItems: "center",
+    cursor: "pointer",
+    marginBottom: "10px",
   },
 }));
 
-export default function SwapCard({ style }: { style?: any }) {
+export default function SwapCard({
+  containerStyle,
+  contentStyle,
+  swapTokenContainerStyle,
+}: {
+  containerStyle?: any;
+  contentStyle?: any;
+  swapTokenContainerStyle?: any;
+}) {
   const styles = useStyles();
   return (
-    <div style={style}>
-      <Card className={styles.card}>
-        <SwapHeader />
-        <div className={styles.cardContent}>
-          <SwapFromForm />
-          <ArrowButton />
-          <SwapToForm />
-          <InfoLabel />
-          <SwapButton />
-        </div>
-      </Card>
-    </div>
+    <Card className={styles.card} style={containerStyle}>
+      <SwapHeader />
+      <div style={contentStyle}>
+        <SwapFromForm style={swapTokenContainerStyle} />
+        <ArrowButton />
+        <SwapToForm style={swapTokenContainerStyle} />
+        <InfoLabel />
+        <SwapButton />
+      </div>
+    </Card>
   );
 }
 
@@ -77,18 +121,17 @@ function SwapHeader() {
       style={{
         display: "flex",
         justifyContent: "space-between",
-        margin: "8px",
+        marginBottom: "20px",
       }}
     >
       <Typography
         style={{
-          fontWeight: "bold",
-          display: "flex",
-          justifyContent: "center",
-          flexDirection: "column",
+          fontSize: 18,
+          fontWeight: 700,
+          fontFamily: "Roboto Condensed",
         }}
       >
-        Swap
+        SWAP
       </Typography>
       <SettingsButton />
     </div>
@@ -97,18 +140,24 @@ function SwapHeader() {
 
 export function ArrowButton() {
   const styles = useStyles();
+  const theme = useTheme();
   const { swapToFromMints } = useSwapContext();
   return (
-    <Button className={styles.swapToFromButton} onClick={swapToFromMints}>
-      ⇅
-    </Button>
+    <ImportExportRounded
+      className={styles.swapToFromButton}
+      fontSize="large"
+      htmlColor={theme.palette.primary.main}
+      onClick={swapToFromMints}
+    />
   );
 }
 
-function SwapFromForm() {
+function SwapFromForm({ style }: { style?: any }) {
   const { fromMint, setFromMint, fromAmount, setFromAmount } = useSwapContext();
   return (
     <SwapTokenForm
+      from
+      style={style}
       mint={fromMint}
       setMint={setFromMint}
       amount={fromAmount}
@@ -117,10 +166,12 @@ function SwapFromForm() {
   );
 }
 
-function SwapToForm() {
+function SwapToForm({ style }: { style?: any }) {
   const { toMint, setToMint, toAmount, setToAmount } = useSwapContext();
   return (
     <SwapTokenForm
+      from={false}
+      style={style}
       mint={toMint}
       setMint={setToMint}
       amount={toAmount}
@@ -130,57 +181,75 @@ function SwapToForm() {
 }
 
 function SwapTokenForm({
+  from,
+  style,
   mint,
   setMint,
   amount,
   setAmount,
 }: {
+  from: boolean;
+  style?: any;
   mint: PublicKey;
   setMint: (m: PublicKey) => void;
   amount: number;
   setAmount: (a: number) => void;
 }) {
+  const styles = useStyles();
+
   const [showTokenDialog, setShowTokenDialog] = useState(false);
   const tokenAccount = useOwnedTokenAccount(mint);
   const mintAccount = useMint(mint);
 
+  const balance =
+    tokenAccount &&
+    mintAccount &&
+    tokenAccount.account.amount.toNumber() / 10 ** mintAccount.decimals;
+
+  const formattedAmount =
+    mintAccount && amount
+      ? amount.toLocaleString("fullwide", {
+          maximumFractionDigits: mintAccount.decimals,
+          useGrouping: false,
+        })
+      : amount;
+
   return (
-    <Paper elevation={0} variant="outlined" style={{ borderRadius: "10px" }}>
-      <div
-        style={{
-          height: "50px",
-          display: "flex",
-          justifyContent: "space-between",
-        }}
-      >
+    <div className={styles.swapTokenFormContainer} style={style}>
+      <div className={styles.swapTokenSelectorContainer}>
         <TokenButton mint={mint} onClick={() => setShowTokenDialog(true)} />
-        <TextField
-          type="number"
-          value={amount}
-          onChange={(e) => setAmount(parseFloat(e.target.value))}
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            flexDirection: "column",
-          }}
-        />
-      </div>
-      <div style={{ marginLeft: "10px", height: "30px" }}>
-        <Typography color="textSecondary" style={{ fontSize: "14px" }}>
+        <Typography color="textSecondary" className={styles.balanceContainer}>
           {tokenAccount && mintAccount
-            ? `Balance: ${(
-                tokenAccount.account.amount.toNumber() /
-                10 ** mintAccount.decimals
-              ).toFixed(mintAccount.decimals)}`
+            ? `Balance: ${balance?.toFixed(mintAccount.decimals)}`
             : `-`}
+          {from && !!balance ? (
+            <span
+              className={styles.maxButton}
+              onClick={() => setAmount(balance)}
+            >
+              MAX
+            </span>
+          ) : null}
         </Typography>
       </div>
+      <TextField
+        type="number"
+        value={formattedAmount}
+        onChange={(e) => setAmount(parseFloat(e.target.value))}
+        InputProps={{
+          disableUnderline: true,
+          classes: {
+            root: styles.amountInput,
+            input: styles.input,
+          },
+        }}
+      />
       <TokenDialog
         setMint={setMint}
         open={showTokenDialog}
         onClose={() => setShowTokenDialog(false)}
       />
-    </Paper>
+    </div>
   );
 }
 
@@ -191,12 +260,14 @@ function TokenButton({
   mint: PublicKey;
   onClick: () => void;
 }) {
+  const styles = useStyles();
+
   return (
-    <Button onClick={onClick} style={{ minWidth: "116px" }}>
-      <TokenIcon mint={mint} style={{ width: "25px", borderRadius: "13px" }} />
-      <TokenName mint={mint} />
+    <div onClick={onClick} className={styles.tokenButton}>
+      <TokenIcon mint={mint} style={{ width: "30px" }} />
+      <TokenName mint={mint} style={{ fontSize: 14, fontWeight: 700 }} />
       <ExpandMore />
-    </Button>
+    </div>
   );
 }
 
@@ -220,11 +291,13 @@ export function TokenIcon({ mint, style }: { mint: PublicKey; style: any }) {
   );
 }
 
-function TokenName({ mint }: { mint: PublicKey }) {
+function TokenName({ mint, style }: { mint: PublicKey; style: any }) {
   const tokenMap = useTokenMap();
   let tokenInfo = tokenMap.get(mint.toString());
   return (
-    <Typography style={{ marginLeft: "5px" }}>{tokenInfo?.symbol}</Typography>
+    <Typography style={{ marginLeft: "10px", marginRight: "5px", ...style }}>
+      {tokenInfo?.symbol}
+    </Typography>
   );
 }
 

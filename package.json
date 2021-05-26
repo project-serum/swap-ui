@@ -6,6 +6,7 @@
   "homepage": "https://github.com/project-serum/swap-ui",
   "license": "Apache-2.0",
   "dependencies": {
+    "@fontsource/roboto": "^4.3.0",
     "@project-serum/serum": "^0.13.34",
     "@project-serum/swap": "^0.1.0-alpha.14",
     "@solana/spl-token": "^0.1.4"
