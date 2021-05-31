@@ -70,7 +70,7 @@ export function DexContextProvider(props: any) {
           "Too many markets. Please file an issue to update this"
         );
       }
-      const multipleMarkets = await anchor.utils.getMultipleAccounts(
+      const multipleMarkets = await anchor.utils.rpc.getMultipleAccounts(
         swapClient.program.provider.connection,
         Array.from(markets.values()).map((m) => new PublicKey(m))
       );
@@ -112,7 +112,7 @@ export function DexContextProvider(props: any) {
         throw new Error("Too many mints. Please file an issue to update this");
       }
 
-      const mints = await anchor.utils.getMultipleAccounts(
+      const mints = await anchor.utils.rpc.getMultipleAccounts(
         swapClient.program.provider.connection,
         mintPubkeys
       );
