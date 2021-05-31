@@ -319,6 +319,8 @@ function SwapButton() {
   const canSwap = useCanSwap();
   const referral = useReferral(fromMarket);
   const fair = useSwapFair();
+  const fromWallet = useOwnedTokenAccount(fromMint);
+  const toWallet = useOwnedTokenAccount(toMint);
 
   // Click handler.
   const sendSwapTransaction = async () => {
@@ -347,6 +349,8 @@ function SwapButton() {
     await swapClient.swap({
       fromMint,
       toMint,
+      fromWallet: fromWallet ? fromWallet.publicKey : undefined,
+      toWallet: toWallet ? toWallet.publicKey : undefined,
       amount,
       minExchangeRate,
       referral,
