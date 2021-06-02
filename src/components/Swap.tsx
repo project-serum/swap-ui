@@ -303,7 +303,7 @@ function TokenName({ mint, style }: { mint: PublicKey; style: any }) {
 
 function SwapButton() {
   const styles = useStyles();
-  const { fromMint, toMint, fromAmount, slippage, isClosingNewAccounts } =
+  const { fromMint, toMint, fromAmount, slippage, isClosingNewAccounts, isStrict } =
     useSwapContext();
   const { swapClient } = useDexContext();
   const fromMintInfo = useMint(fromMint);
@@ -330,15 +330,18 @@ function SwapButton() {
     if (!fair) {
       throw new Error("Invalid fair");
     }
-    const amount = new BN(fromAmount).mul(
-      new BN(10).pow(new BN(fromMintInfo.decimals))
-    );
+		if (!route || route.markets.length === 0) {
+			throw new Error('Invalid route');
+		}
+    const amount = new BN(fromAmount*10**fromMintInfo.decimals);
+		console.log('amount', route, fair.toString(), fromAmount.toString(), amount.toString());
     const minExchangeRate = {
-      rate: new BN(10 ** toMintInfo.decimals * (1 - BASE_TAKER_FEE_BPS))
+      rate: new BN(10 ** toMintInfo.decimals * (1 - BASE_TAKER_FEE_BPS)**route.markets.length)
         .divn(fair)
         .muln(100 - slippage)
         .divn(100),
       decimals: fromMintInfo.decimals,
+			strict: isStrict,
     };
     const fromOpenOrders = fromMarket
       ? openOrders.get(fromMarket?.address.toString())
@@ -353,7 +356,7 @@ function SwapButton() {
       toWallet: toWallet ? toWallet.publicKey : undefined,
       amount,
       minExchangeRate,
-      referral,
+		  referral,
       // Pass in the below parameters so that the client doesn't perform
       // wasteful network requests when we already have the data.
       fromMarket,
