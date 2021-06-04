@@ -56,6 +56,15 @@ export type SwapContext = {
   // True if all newly created market accounts should be closed in the
   // same user flow (ideally in the same transaction).
   isClosingNewAccounts: boolean;
+
+  // True if the swap exchange rate should be a function of nothing but the
+  // from and to tokens, ignoring any quote tokens that may have been
+  // accumulated by performing the swap.
+  //
+  // Always false (for now).
+  isStrict: boolean;
+  setIsStrict: (isStrict: boolean) => void;
+
   setIsClosingNewAccounts: (b: boolean) => void;
 };
 const _SwapContext = React.createContext<null | SwapContext>(null);
@@ -66,6 +75,7 @@ export function SwapContextProvider(props: any) {
   const [fromAmount, _setFromAmount] = useState(props.fromAmount ?? 0);
   const [toAmount, _setToAmount] = useState(props.toAmount ?? 0);
   const [isClosingNewAccounts, setIsClosingNewAccounts] = useState(false);
+  const [isStrict, setIsStrict] = useState(false);
   const [slippage, setSlippage] = useState(DEFAULT_SLIPPAGE_PERCENT);
   const [fairOverride, setFairOverride] = useState<number | null>(null);
   const fair = _useSwapFair(fromMint, toMint, fairOverride);
@@ -117,6 +127,8 @@ export function SwapContextProvider(props: any) {
         fairOverride,
         setFairOverride,
         isClosingNewAccounts,
+        isStrict,
+        setIsStrict,
         setIsClosingNewAccounts,
         referral,
       }}

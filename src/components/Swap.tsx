@@ -303,8 +303,14 @@ function TokenName({ mint, style }: { mint: PublicKey; style: any }) {
 
 function SwapButton() {
   const styles = useStyles();
-  const { fromMint, toMint, fromAmount, slippage, isClosingNewAccounts } =
-    useSwapContext();
+  const {
+    fromMint,
+    toMint,
+    fromAmount,
+    slippage,
+    isClosingNewAccounts,
+    isStrict,
+  } = useSwapContext();
   const { swapClient } = useDexContext();
   const fromMintInfo = useMint(fromMint);
   const toMintInfo = useMint(toMint);
@@ -321,6 +327,7 @@ function SwapButton() {
   const fair = useSwapFair();
   const fromWallet = useOwnedTokenAccount(fromMint);
   const toWallet = useOwnedTokenAccount(toMint);
+  const quoteMint = useMint(fromMarket && fromMarket.quoteMintAddress);
 
   // Click handler.
   const sendSwapTransaction = async () => {
@@ -330,15 +337,19 @@ function SwapButton() {
     if (!fair) {
       throw new Error("Invalid fair");
     }
-    const amount = new BN(fromAmount).mul(
-      new BN(10).pow(new BN(fromMintInfo.decimals))
-    );
+    if (!quoteMint) {
+      throw new Error("Quote mint not found");
+    }
+    const amount = new BN(fromAmount * 10 ** fromMintInfo.decimals);
     const minExchangeRate = {
-      rate: new BN(10 ** toMintInfo.decimals * (1 - BASE_TAKER_FEE_BPS))
-        .divn(fair)
+      rate: new BN(
+        (10 ** toMintInfo.decimals * (1 - BASE_TAKER_FEE_BPS)) / fair
+      )
         .muln(100 - slippage)
         .divn(100),
-      decimals: fromMintInfo.decimals,
+      fromDecimals: fromMintInfo.decimals,
+      quoteDecimals: quoteMint.decimals,
+      strict: isStrict,
     };
     const fromOpenOrders = fromMarket
       ? openOrders.get(fromMarket?.address.toString())
