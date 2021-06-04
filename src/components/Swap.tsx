@@ -303,8 +303,14 @@ function TokenName({ mint, style }: { mint: PublicKey; style: any }) {
 
 function SwapButton() {
   const styles = useStyles();
-  const { fromMint, toMint, fromAmount, slippage, isClosingNewAccounts, isStrict } =
-    useSwapContext();
+  const {
+    fromMint,
+    toMint,
+    fromAmount,
+    slippage,
+    isClosingNewAccounts,
+    isStrict,
+  } = useSwapContext();
   const { swapClient } = useDexContext();
   const fromMintInfo = useMint(fromMint);
   const toMintInfo = useMint(toMint);
@@ -321,6 +327,7 @@ function SwapButton() {
   const fair = useSwapFair();
   const fromWallet = useOwnedTokenAccount(fromMint);
   const toWallet = useOwnedTokenAccount(toMint);
+  const quoteMint = useMint(fromMarket && fromMarket.quoteMintAddress);
 
   // Click handler.
   const sendSwapTransaction = async () => {
@@ -330,19 +337,21 @@ function SwapButton() {
     if (!fair) {
       throw new Error("Invalid fair");
     }
-		if (!route || route.markets.length === 0) {
-			throw new Error('Invalid route');
-		}
-    const amount = new BN(fromAmount*10**fromMintInfo.decimals);
-		console.log('amount', route, fair.toString(), fromAmount.toString(), amount.toString());
+    if (!quoteMint) {
+      throw new Error("Quote mint not found");
+    }
+    const amount = new BN(fromAmount * 10 ** fromMintInfo.decimals);
     const minExchangeRate = {
-      rate: new BN(10 ** toMintInfo.decimals * (1 - BASE_TAKER_FEE_BPS)**route.markets.length)
-        .divn(fair)
+      rate: new BN(
+        (10 ** toMintInfo.decimals * (1 - BASE_TAKER_FEE_BPS)) / fair
+      )
         .muln(100 - slippage)
         .divn(100),
-      decimals: fromMintInfo.decimals,
-			strict: isStrict,
+      fromDecimals: fromMintInfo.decimals,
+      quoteDecimals: quoteMint.decimals,
+      strict: isStrict,
     };
+    console.log("rate", minExchangeRate.rate.toString());
     const fromOpenOrders = fromMarket
       ? openOrders.get(fromMarket?.address.toString())
       : undefined;
@@ -355,8 +364,9 @@ function SwapButton() {
       fromWallet: fromWallet ? fromWallet.publicKey : undefined,
       toWallet: toWallet ? toWallet.publicKey : undefined,
       amount,
+      // @ts-ignore
       minExchangeRate,
-		  referral,
+      referral,
       // Pass in the below parameters so that the client doesn't perform
       // wasteful network requests when we already have the data.
       fromMarket,

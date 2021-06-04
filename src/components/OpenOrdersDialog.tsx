@@ -25,7 +25,7 @@ import { Close } from "@material-ui/icons";
 import { useMarket, useOpenOrders, useDexContext } from "../context/Dex";
 import { useTokenMap } from "../context/TokenList";
 import { useMint, useOwnedTokenAccount } from "../context/Token";
-import { DEX_PID } from '../utils/pubkeys';
+import { DEX_PID } from "../utils/pubkeys";
 
 const useStyles = makeStyles((theme) => ({
   table: {},
@@ -171,15 +171,15 @@ function OpenOrdersRow({
   };
 
   const closeOpenOrders = async () => {
-		await swapClient.program.rpc.closeAccount({
-			accounts: {
-				openOrders: ooAccount.address,
-				authority: swapClient.program.provider.wallet.publicKey,
-				destination: swapClient.program.provider.wallet.publicKey,
-				market: marketClient!.address,
-				dexProgram: DEX_PID,
-			},
-		});
+    await swapClient.program.rpc.closeAccount({
+      accounts: {
+        openOrders: ooAccount.address,
+        authority: swapClient.program.provider.wallet.publicKey,
+        destination: swapClient.program.provider.wallet.publicKey,
+        market: marketClient!.address,
+        dexProgram: DEX_PID,
+      },
+    });
   };
 
   return (
