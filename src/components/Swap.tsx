@@ -351,7 +351,6 @@ function SwapButton() {
       quoteDecimals: quoteMint.decimals,
       strict: isStrict,
     };
-    console.log("rate", minExchangeRate.rate.toString());
     const fromOpenOrders = fromMarket
       ? openOrders.get(fromMarket?.address.toString())
       : undefined;
@@ -364,7 +363,6 @@ function SwapButton() {
       fromWallet: fromWallet ? fromWallet.publicKey : undefined,
       toWallet: toWallet ? toWallet.publicKey : undefined,
       amount,
-      // @ts-ignore
       minExchangeRate,
       referral,
       // Pass in the below parameters so that the client doesn't perform
