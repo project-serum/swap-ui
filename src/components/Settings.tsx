@@ -192,7 +192,7 @@ function CloseNewAccountsSwitch() {
   const { isClosingNewAccounts, setIsClosingNewAccounts } = useSwapContext();
 
   return (
-    <FormGroup row>
+    <FormGroup style={{ display: "none" }} row>
       <FormControlLabel
         classes={{ label: styles.closeAccountSwitchLabel }}
         labelPlacement="start"
