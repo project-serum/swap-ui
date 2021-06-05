@@ -29,6 +29,7 @@ export const BASE_TAKER_FEE_BPS = 0.0022;
 type DexContext = {
   // Maps market address to open orders accounts.
   openOrders: Map<string, Array<OpenOrders>>;
+  closeOpenOrders: (openOrder: OpenOrders) => void;
   swapClient: SwapClient;
 };
 const _DexContext = React.createContext<DexContext | null>(null);
@@ -38,6 +39,20 @@ export function DexContextProvider(props: any) {
     new Map()
   );
   const swapClient = props.swapClient;
+
+  // Removes the given open orders from the context.
+  const closeOpenOrders = async (openOrder: OpenOrders) => {
+    const newOoAccounts = new Map(ooAccounts);
+    const openOrders = newOoAccounts
+      .get(openOrder.market.toString())
+      ?.filter((oo: OpenOrders) => !oo.address.equals(openOrder.address));
+    if (openOrders && openOrders.length > 0) {
+      newOoAccounts.set(openOrder.market.toString(), openOrders);
+    } else {
+      newOoAccounts.delete(openOrder.market.toString());
+    }
+    setOoAccounts(newOoAccounts);
+  };
 
   // Three operations:
   //
@@ -129,6 +144,7 @@ export function DexContextProvider(props: any) {
     <_DexContext.Provider
       value={{
         openOrders: ooAccounts,
+        closeOpenOrders,
         swapClient,
       }}
     >
