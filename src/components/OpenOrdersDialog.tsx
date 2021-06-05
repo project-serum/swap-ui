@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { PublicKey } from "@solana/web3.js";
 import { MintInfo } from "@solana/spl-token";
 import { BN } from "@project-serum/anchor";
@@ -41,8 +41,6 @@ export default function OpenOrdersDialog({
   open: boolean;
   onClose: () => void;
 }) {
-  const styles = useStyles();
-
   return (
     <Dialog
       maxWidth="lg"
@@ -124,9 +122,11 @@ function OpenOrdersRow({
   openOrders: Array<OpenOrders>;
 }) {
   const styles = useStyles();
-
   const [ooAccount, setOoAccount] = useState(openOrders[0]);
-  const { swapClient } = useDexContext();
+  useEffect(() => {
+    setOoAccount(openOrders[0]);
+  }, [openOrders]);
+  const { swapClient, closeOpenOrders } = useDexContext();
   const marketClient = useMarket(market);
   const tokenMap = useTokenMap();
   const base = useMint(marketClient?.baseMintAddress);
@@ -170,7 +170,7 @@ function OpenOrdersRow({
     await swapClient.program.provider.send(transaction, signers);
   };
 
-  const closeOpenOrders = async () => {
+  const _closeOpenOrders = async () => {
     await swapClient.program.rpc.closeAccount({
       accounts: {
         openOrders: ooAccount.address,
@@ -180,6 +180,7 @@ function OpenOrdersRow({
         dexProgram: DEX_PID,
       },
     });
+    closeOpenOrders(ooAccount);
   };
 
   return (
@@ -241,7 +242,7 @@ function OpenOrdersRow({
       <TableCell align="center">
         <Button
           disabled={closeDisabled}
-          onClick={closeOpenOrders}
+          onClick={_closeOpenOrders}
           className={styles.closeAccount}
         >
           Close
