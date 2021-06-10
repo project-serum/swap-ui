@@ -43,10 +43,6 @@ export function TokenListContextProvider(props: any) {
           t.address === "So11111111111111111111111111111111111111112";
         return isUsdxQuoted && !isSol;
       })
-      .concat([
-        tokenMap.get(USDC_MINT.toString()),
-        tokenMap.get(USDT_MINT.toString()),
-      ]);
     tokens.sort((a: TokenInfo, b: TokenInfo) =>
       a.symbol < b.symbol ? -1 : a.symbol > b.symbol ? 1 : 0
     );
