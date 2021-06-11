@@ -1,4 +1,5 @@
 import React, { useContext, useState, useEffect } from "react";
+import * as assert from "assert";
 import { useAsync } from "react-async-hook";
 import { TokenInfo } from "@solana/spl-token-registry";
 import { MintLayout } from "@solana/spl-token";
@@ -94,19 +95,14 @@ export function DexContextProvider(props: any) {
           publicKey: programAccount?.publicKey,
           account: new Market(
             Market.getLayout(DEX_PID).decode(programAccount?.account.data),
-            -1, // Not used so don't bother fetching.
-            -1, // Not used so don't bother fetching.
+            -1, // Set below so that we can batch fetch mints.
+            -1, // Set below so that we can batch fetch mints.
             swapClient.program.provider.opts,
             DEX_PID
           ),
         };
       });
-      marketClients.forEach((m) => {
-        _MARKET_CACHE.set(
-          m.publicKey!.toString(),
-          new Promise<Market>((resolve) => resolve(m.account))
-        );
-      });
+
       setOoAccounts(newOoAccounts);
 
       // Batch fetch all the mints, since we know we'll need them at some
@@ -131,8 +127,28 @@ export function DexContextProvider(props: any) {
         swapClient.program.provider.connection,
         mintPubkeys
       );
-      mints.forEach((mint) => {
-        setMintCache(mint!.publicKey, MintLayout.decode(mint!.account.data));
+      const mintInfos = mints.map((mint) => {
+        const mintInfo = MintLayout.decode(mint!.account.data);
+        setMintCache(mint!.publicKey, mintInfo);
+        return { publicKey: mint!.publicKey, mintInfo };
+      });
+
+      marketClients.forEach((m) => {
+        const baseMintInfo = mintInfos.filter((mint) =>
+          mint.publicKey.equals(m.account.baseMintAddress)
+        )[0];
+        const quoteMintInfo = mintInfos.filter((mint) =>
+          mint.publicKey.equals(m.account.baseMintAddress)
+        )[0];
+        assert.ok(baseMintInfo && quoteMintInfo);
+        // @ts-ignore
+        m.account._baseSplTokenDecimals = baseMintInfo.mintInfo.decimals;
+        // @ts-ignore
+        m.account._quoteSplTokenDecimals = quoteMintInfo.mintInfo.decimals;
+        _MARKET_CACHE.set(
+          m.publicKey!.toString(),
+          new Promise<Market>((resolve) => resolve(m.account))
+        );
       });
     });
   }, [
@@ -179,15 +195,11 @@ export function useMarket(market?: PublicKey): Market | undefined {
     }
 
     const marketClient = new Promise<Market>(async (resolve) => {
-      const marketAccount =
-        await swapClient.program.provider.connection.getAccountInfo(market);
-      if (marketAccount === null) {
-        throw new Error("Invalid market");
-      }
-      const marketClient = new Market(
-        Market.getLayout(DEX_PID).decode(marketAccount.data),
-        -1,
-        -1,
+      // TODO: if we already have the mints, then pass them through to the
+      //       market client here to save a network request.
+      const marketClient = await Market.load(
+        swapClient.program.provider.connection,
+        market,
         swapClient.program.provider.opts,
         DEX_PID
       );

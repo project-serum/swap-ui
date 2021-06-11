@@ -35,14 +35,12 @@ export function TokenListContextProvider(props: any) {
 
   // Tokens with USD(x) quoted markets.
   const swappableTokens = useMemo(() => {
-    const tokens = tokenList
-      .filter((t: TokenInfo) => {
-        const isUsdxQuoted =
-          t.extensions?.serumV3Usdt || t.extensions?.serumV3Usdc;
-        const isSol =
-          t.address === "So11111111111111111111111111111111111111112";
-        return isUsdxQuoted && !isSol;
-      })
+    const tokens = tokenList.filter((t: TokenInfo) => {
+      const isUsdxQuoted =
+        t.extensions?.serumV3Usdt || t.extensions?.serumV3Usdc;
+      const isSol = t.address === "So11111111111111111111111111111111111111112";
+      return isUsdxQuoted && !isSol;
+    });
     tokens.sort((a: TokenInfo, b: TokenInfo) =>
       a.symbol < b.symbol ? -1 : a.symbol > b.symbol ? 1 : 0
     );
