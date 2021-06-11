@@ -69,9 +69,9 @@ export function useOwnedTokenAccount(
 
   // Take the account with the most tokens in it.
   tokenAccounts.sort((a, b) =>
-    a.account.amount < b.account.amount
+    a.account.amount > b.account.amount
       ? -1
-      : a.account.amount > b.account.amount
+      : a.account.amount < b.account.amount
       ? 1
       : 0
   );
