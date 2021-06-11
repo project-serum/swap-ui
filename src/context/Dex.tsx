@@ -195,6 +195,8 @@ export function useMarket(market?: PublicKey): Market | undefined {
     }
 
     const marketClient = new Promise<Market>(async (resolve) => {
+      // TODO: if we already have the mints, then pass them through to the
+      //       market client here to save a network request.
       const marketClient = await Market.load(
         swapClient.program.provider.connection,
         market,
