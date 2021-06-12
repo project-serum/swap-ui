@@ -116,7 +116,7 @@ export default function SwapCard({
   );
 }
 
-function SwapHeader() {
+export function SwapHeader() {
   return (
     <div
       style={{
@@ -180,7 +180,7 @@ function SwapToForm({ style }: { style?: any }) {
   );
 }
 
-function SwapTokenForm({
+export function SwapTokenForm({
   from,
   style,
   mint,
@@ -301,7 +301,7 @@ function TokenName({ mint, style }: { mint: PublicKey; style: any }) {
   );
 }
 
-function SwapButton() {
+export function SwapButton() {
   const styles = useStyles();
   const {
     fromMint,
