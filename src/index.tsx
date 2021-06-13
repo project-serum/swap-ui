@@ -169,7 +169,7 @@ export type SwapProps = {
 };
 
 export {
-  // Components
+  // Components.
   Swap,
   SwapCard,
   SwapHeader,
@@ -177,18 +177,18 @@ export {
   ArrowButton,
   SwapButton,
   TokenDialog,
-  // Providers and context
-  // Swap
+  // Providers and context.
+  // Swap.
   SwapContextProvider,
   useSwapContext,
   useSwapFair,
-  // TokenList
+  // TokenList.
   TokenListContextProvider,
   useTokenMap,
-  //  Token
+  // Token.
   TokenContextProvider,
   useMint,
-  // Dex
+  // Dex.
   DexContextProvider,
   useFairRoute,
   useMarketName,
