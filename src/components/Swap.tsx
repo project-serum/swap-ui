@@ -16,7 +16,7 @@ import {
   useOpenOrders,
   useRouteVerbose,
   useMarket,
-  BASE_TAKER_FEE_BPS,
+  FEE_MULTIPLIER,
 } from "../context/Dex";
 import { useTokenMap } from "../context/TokenList";
 import { useMint, useOwnedTokenAccount } from "../context/Token";
@@ -342,9 +342,7 @@ export function SwapButton() {
     }
     const amount = new BN(fromAmount * 10 ** fromMintInfo.decimals);
     const minExchangeRate = {
-      rate: new BN(
-        (10 ** toMintInfo.decimals * (1 - BASE_TAKER_FEE_BPS)) / fair
-      )
+      rate: new BN((10 ** toMintInfo.decimals * FEE_MULTIPLIER) / fair)
         .muln(100 - slippage)
         .divn(100),
       fromDecimals: fromMintInfo.decimals,
