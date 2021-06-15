@@ -25,7 +25,8 @@ import { useTokenMap, useTokenListContext } from "./TokenList";
 import { fetchSolletInfo, requestWormholeSwapMarketIfNeeded } from "./Sollet";
 import { setMintCache } from "./Token";
 
-export const BASE_TAKER_FEE_BPS = 0.0022;
+const BASE_TAKER_FEE_BPS = 0.0022;
+export const FEE_MULTIPLIER = 1 - BASE_TAKER_FEE_BPS;
 
 type DexContext = {
   // Maps market address to open orders accounts.

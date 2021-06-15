@@ -9,7 +9,12 @@ import {
 } from "@solana/spl-token";
 import { Market } from "@project-serum/serum";
 import { SRM_MINT, USDC_MINT, USDT_MINT } from "../utils/pubkeys";
-import { useFairRoute, useRouteVerbose, useDexContext } from "./Dex";
+import {
+  useFairRoute,
+  useRouteVerbose,
+  useDexContext,
+  FEE_MULTIPLIER,
+} from "./Dex";
 import {
   useTokenListContext,
   SPL_REGISTRY_SOLLET_TAG,
@@ -99,7 +104,7 @@ export function SwapContextProvider(props: any) {
       throw new Error("Fair price not found");
     }
     _setFromAmount(amount);
-    _setToAmount(amount / fair);
+    _setToAmount(FEE_MULTIPLIER * (amount / fair));
   };
 
   const setToAmount = (amount: number) => {
@@ -107,7 +112,7 @@ export function SwapContextProvider(props: any) {
       throw new Error("Fair price not found");
     }
     _setToAmount(amount);
-    _setFromAmount(amount * fair);
+    _setFromAmount((amount * fair) / FEE_MULTIPLIER);
   };
 
   return (
