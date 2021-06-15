@@ -27,7 +27,7 @@ import { InfoLabel } from "./Info";
 
 const useStyles = makeStyles((theme) => ({
   card: {
-    width: theme.spacing(56),
+    width: theme.spacing(50),
     borderRadius: theme.spacing(2),
     boxShadow: "0px 0px 30px 5px rgba(0,0,0,0.075)",
     padding: theme.spacing(2),
@@ -40,12 +40,12 @@ const useStyles = makeStyles((theme) => ({
   },
   swapButton: {
     width: "100%",
-    borderRadius: theme.spacing(1.4),
+    borderRadius: theme.spacing(2),
     backgroundColor: theme.palette.primary.main,
     color: theme.palette.primary.contrastText,
     fontSize: 16,
     fontWeight: 700,
-    padding: theme.spacing(1.2),
+    padding: theme.spacing(1.5),
   },
   swapToFromButton: {
     display: "block",
@@ -60,7 +60,7 @@ const useStyles = makeStyles((theme) => ({
     textAlign: "right",
   },
   swapTokenFormContainer: {
-    borderRadius: theme.spacing(1.5),
+    borderRadius: theme.spacing(2),
     boxShadow: "0px 0px 15px 2px rgba(33,150,243,0.1)",
     display: "flex",
     justifyContent: "space-between",
@@ -117,13 +117,12 @@ export default function SwapCard({
 }
 
 export function SwapHeader() {
-  const theme = useTheme();
   return (
     <div
       style={{
         display: "flex",
         justifyContent: "space-between",
-        marginBottom: theme.spacing(2.6),
+        marginBottom: "16px",
       }}
     >
       <Typography
@@ -266,7 +265,7 @@ function TokenButton({
 
   return (
     <div onClick={onClick} className={styles.tokenButton}>
-      <TokenIcon mint={mint} style={{ width: theme.spacing(3.6) }} />
+      <TokenIcon mint={mint} style={{ width: theme.spacing(4) }} />
       <TokenName mint={mint} style={{ fontSize: 14, fontWeight: 700 }} />
       <ExpandMore />
     </div>
@@ -301,7 +300,7 @@ function TokenName({ mint, style }: { mint: PublicKey; style: any }) {
   return (
     <Typography
       style={{
-        marginLeft: theme.spacing(1.4),
+        marginLeft: theme.spacing(2),
         marginRight: theme.spacing(1),
         ...style,
       }}
