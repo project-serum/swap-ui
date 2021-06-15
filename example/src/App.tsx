@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { SnackbarProvider, useSnackbar } from "notistack";
-import { Button } from "@material-ui/core";
+import { Button, Grid, makeStyles } from "@material-ui/core";
 import { Provider } from "@project-serum/anchor";
 // @ts-ignore
 import Wallet from "@project-serum/sol-wallet-adapter";
@@ -30,7 +30,16 @@ function App() {
   );
 }
 
+const useStyles = makeStyles((theme) => ({
+  root: {
+    minHeight: "100vh",
+    paddingLeft: theme.spacing(1),
+    paddingRight: theme.spacing(1),
+  },
+}));
+
 function AppInner() {
+  const styles = useStyles();
   const { enqueueSnackbar } = useSnackbar();
   const [isConnected, setIsConnected] = useState(false);
   const [tokenList, setTokenList] = useState<TokenListContainer | null>(null);
@@ -90,20 +99,11 @@ function AppInner() {
   }, [wallet, enqueueSnackbar]);
 
   return (
-    <div
-      style={{
-        width: "450px",
-        marginLeft: "auto",
-        marginRight: "auto",
-        position: "absolute",
-        left: 0,
-        right: 0,
-        top: 0,
-        bottom: 0,
-        display: "flex",
-        justifyContent: "center",
-        flexDirection: "column",
-      }}
+    <Grid
+      container
+      justify="center"
+      alignItems="center"
+      className={styles.root}
     >
       <Button
         variant="outlined"
@@ -113,7 +113,7 @@ function AppInner() {
         {!isConnected ? "Connect" : "Disconnect"}
       </Button>
       {tokenList && <Swap provider={provider} tokenList={tokenList} />}
-    </div>
+    </Grid>
   );
 }
 

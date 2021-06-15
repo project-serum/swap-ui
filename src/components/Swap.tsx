@@ -27,10 +27,10 @@ import { InfoLabel } from "./Info";
 
 const useStyles = makeStyles((theme) => ({
   card: {
-    width: "450px",
-    borderRadius: "16px",
+    width: theme.spacing(50),
+    borderRadius: theme.spacing(2),
     boxShadow: "0px 0px 30px 5px rgba(0,0,0,0.075)",
-    padding: "16px",
+    padding: theme.spacing(2),
   },
   tab: {
     width: "50%",
@@ -40,12 +40,12 @@ const useStyles = makeStyles((theme) => ({
   },
   swapButton: {
     width: "100%",
-    borderRadius: "10px",
+    borderRadius: theme.spacing(2),
     backgroundColor: theme.palette.primary.main,
     color: theme.palette.primary.contrastText,
     fontSize: 16,
     fontWeight: 700,
-    padding: "10px",
+    padding: theme.spacing(1.5),
   },
   swapToFromButton: {
     display: "block",
@@ -60,14 +60,14 @@ const useStyles = makeStyles((theme) => ({
     textAlign: "right",
   },
   swapTokenFormContainer: {
-    borderRadius: "10px",
+    borderRadius: theme.spacing(2),
     boxShadow: "0px 0px 15px 2px rgba(33,150,243,0.1)",
     display: "flex",
     justifyContent: "space-between",
-    padding: "10px",
+    padding: theme.spacing(1),
   },
   swapTokenSelectorContainer: {
-    marginLeft: "5px",
+    marginLeft: theme.spacing(1),
     display: "flex",
     flexDirection: "column",
     width: "50%",
@@ -78,7 +78,7 @@ const useStyles = makeStyles((theme) => ({
     fontSize: "14px",
   },
   maxButton: {
-    marginLeft: 10,
+    marginLeft: theme.spacing(1),
     color: theme.palette.primary.main,
     fontWeight: 700,
     fontSize: "12px",
@@ -88,7 +88,7 @@ const useStyles = makeStyles((theme) => ({
     display: "flex",
     alignItems: "center",
     cursor: "pointer",
-    marginBottom: "10px",
+    marginBottom: theme.spacing(1),
   },
 }));
 
@@ -122,7 +122,7 @@ export function SwapHeader() {
       style={{
         display: "flex",
         justifyContent: "space-between",
-        marginBottom: "20px",
+        marginBottom: "16px",
       }}
     >
       <Typography
@@ -261,10 +261,11 @@ function TokenButton({
   onClick: () => void;
 }) {
   const styles = useStyles();
+  const theme = useTheme();
 
   return (
     <div onClick={onClick} className={styles.tokenButton}>
-      <TokenIcon mint={mint} style={{ width: "30px" }} />
+      <TokenIcon mint={mint} style={{ width: theme.spacing(4) }} />
       <TokenName mint={mint} style={{ fontSize: 14, fontWeight: 700 }} />
       <ExpandMore />
     </div>
@@ -293,9 +294,17 @@ export function TokenIcon({ mint, style }: { mint: PublicKey; style: any }) {
 
 function TokenName({ mint, style }: { mint: PublicKey; style: any }) {
   const tokenMap = useTokenMap();
+  const theme = useTheme();
   let tokenInfo = tokenMap.get(mint.toString());
+
   return (
-    <Typography style={{ marginLeft: "10px", marginRight: "5px", ...style }}>
+    <Typography
+      style={{
+        marginLeft: theme.spacing(2),
+        marginRight: theme.spacing(1),
+        ...style,
+      }}
+    >
       {tokenInfo?.symbol}
     </Typography>
   );
