@@ -16,6 +16,7 @@ import {
 } from "@material-ui/core";
 import { TokenIcon } from "./Swap";
 import { useSwappableTokens } from "../context/TokenList";
+import { useMediaQuery } from "@material-ui/core";
 
 const useStyles = makeStyles((theme) => ({
   dialogContent: {
@@ -53,6 +54,7 @@ export default function TokenDialog({
   const styles = useStyles();
   const { swappableTokens, swappableTokensSollet, swappableTokensWormhole } =
     useSwappableTokens();
+  const displayTabs = !useMediaQuery("(max-width:450px)");
   const selectedTokens =
     tabSelection === 0
       ? swappableTokens
@@ -107,34 +109,36 @@ export default function TokenDialog({
           ))}
         </List>
       </DialogContent>
-      <DialogActions>
-        <Tabs
-          value={tabSelection}
-          onChange={(e, v) => setTabSelection(v)}
-          classes={{
-            indicator: styles.tabIndicator,
-          }}
-        >
-          <Tab
-            value={0}
-            className={styles.tab}
-            classes={{ selected: styles.tabSelected }}
-            label="Main"
-          />
-          <Tab
-            value={1}
-            className={styles.tab}
-            classes={{ selected: styles.tabSelected }}
-            label="Wormhole"
-          />
-          <Tab
-            value={2}
-            className={styles.tab}
-            classes={{ selected: styles.tabSelected }}
-            label="Sollet"
-          />
-        </Tabs>
-      </DialogActions>
+      {displayTabs && (
+        <DialogActions>
+          <Tabs
+            value={tabSelection}
+            onChange={(e, v) => setTabSelection(v)}
+            classes={{
+              indicator: styles.tabIndicator,
+            }}
+          >
+            <Tab
+              value={0}
+              className={styles.tab}
+              classes={{ selected: styles.tabSelected }}
+              label="Main"
+            />
+            <Tab
+              value={1}
+              className={styles.tab}
+              classes={{ selected: styles.tabSelected }}
+              label="Wormhole"
+            />
+            <Tab
+              value={2}
+              className={styles.tab}
+              classes={{ selected: styles.tabSelected }}
+              label="Sollet"
+            />
+          </Tabs>
+        </DialogActions>
+      )}
     </Dialog>
   );
 }
