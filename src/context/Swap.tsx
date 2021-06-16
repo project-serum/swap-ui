@@ -1,5 +1,5 @@
 import * as assert from "assert";
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { useAsync } from "react-async-hook";
 import { PublicKey } from "@solana/web3.js";
 import {
@@ -88,15 +88,19 @@ export function SwapContextProvider(props: any) {
 
   assert.ok(slippage >= 0);
 
+  useEffect(() => {
+    if (fair) {
+      setFromAmount(fromAmount);
+    }
+  }, [fair]);
+
   const swapToFromMints = () => {
     const oldFrom = fromMint;
-    const oldFromAmount = fromAmount;
     const oldTo = toMint;
     const oldToAmount = toAmount;
+    _setFromAmount(oldToAmount);
     setFromMint(oldTo);
     setToMint(oldFrom);
-    _setFromAmount(oldToAmount);
-    _setToAmount(oldFromAmount);
   };
 
   const setFromAmount = (amount: number) => {
