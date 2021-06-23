@@ -356,6 +356,9 @@ export function useBbo(market?: PublicKey): Bbo | undefined {
   }
   const bestBid = orderbook.bids.items(true).next().value;
   const bestOffer = orderbook.asks.items(false).next().value;
+  if (!bestBid && !bestOffer) {
+    return {};
+  }
   if (!bestBid) {
     return { bestOffer: bestOffer.price };
   }
