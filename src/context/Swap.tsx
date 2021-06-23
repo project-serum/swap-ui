@@ -89,9 +89,10 @@ export function SwapContextProvider(props: any) {
   assert.ok(slippage >= 0);
 
   useEffect(() => {
-    if (fair) {
-      setFromAmount(fromAmount);
+    if (!fair) {
+      return;
     }
+    setFromAmount(fromAmount);
   }, [fair]);
 
   const swapToFromMints = () => {
@@ -105,7 +106,9 @@ export function SwapContextProvider(props: any) {
 
   const setFromAmount = (amount: number) => {
     if (fair === undefined) {
-      throw new Error("Fair price not found");
+      _setFromAmount(0);
+      _setToAmount(0);
+      return;
     }
     _setFromAmount(amount);
     _setToAmount(FEE_MULTIPLIER * (amount / fair));
@@ -113,7 +116,9 @@ export function SwapContextProvider(props: any) {
 
   const setToAmount = (amount: number) => {
     if (fair === undefined) {
-      throw new Error("Fair price not found");
+      _setFromAmount(0);
+      _setToAmount(0);
+      return;
     }
     _setToAmount(amount);
     _setFromAmount((amount * fair) / FEE_MULTIPLIER);
@@ -175,12 +180,16 @@ export function useCanSwap(): boolean {
   const { fromMint, toMint, fromAmount, toAmount } = useSwapContext();
   const { swapClient } = useDexContext();
   const { wormholeMap, solletMap } = useTokenListContext();
+  const fair = useSwapFair();
   const route = useRouteVerbose(fromMint, toMint);
   if (route === null) {
     return false;
   }
 
   return (
+    // Fair price is defined.
+    fair !== undefined &&
+    fair > 0 &&
     // Mints are distinct.
     fromMint.equals(toMint) === false &&
     // Wallet is connected.
