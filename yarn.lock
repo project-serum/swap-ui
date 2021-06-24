@@ -1654,10 +1654,10 @@
     bs58 "^4.0.1"
     eventemitter3 "^4.0.4"
 
-"@project-serum/swap@^0.1.0-alpha.28":
-  version "0.1.0-alpha.28"
-  resolved "https://registry.yarnpkg.com/@project-serum/swap/-/swap-0.1.0-alpha.28.tgz#523bb161c2d0011f4df0317ed31b77107f72ed06"
-  integrity sha512-LJ6roKiK43JyAjjDNejXxyFurngXI+YVNdliTnedKp8MgJm6QFj2S8606xiD0Col3aXI6jq7Y6xw6CczHc1j4g==
+"@project-serum/swap@^0.1.0-alpha.31":
+  version "0.1.0-alpha.31"
+  resolved "https://registry.yarnpkg.com/@project-serum/swap/-/swap-0.1.0-alpha.31.tgz#0656c9959f7be18248731c6ec8025d7619d58b74"
+  integrity sha512-LiepwTqC9+1PYF+Oce2VQJmiia8Li9ysRwbvbaW5+0B4ZmcXS1rc3fqrn8Xyi36XL4NGRbsT7xZa/XoyP5S7fg==
   dependencies:
     "@project-serum/serum" "^0.13.34"
     "@solana/spl-token" "^0.1.3"

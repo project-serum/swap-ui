@@ -139,7 +139,7 @@ export function DexContextProvider(props: any) {
           mint.publicKey.equals(m.account.baseMintAddress)
         )[0];
         const quoteMintInfo = mintInfos.filter((mint) =>
-          mint.publicKey.equals(m.account.baseMintAddress)
+          mint.publicKey.equals(m.account.quoteMintAddress)
         )[0];
         assert.ok(baseMintInfo && quoteMintInfo);
         // @ts-ignore

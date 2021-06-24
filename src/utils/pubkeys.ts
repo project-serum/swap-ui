@@ -16,6 +16,10 @@ export const USDT_MINT = new PublicKey(
   "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
 );
 
+export const WRAPPED_SOL_MINT = new PublicKey(
+  "So11111111111111111111111111111111111111112"
+);
+
 export const WORM_MARKET_BASE = new PublicKey(
   "6a9wpsZpZGxGhFVSQBpcTNjNjytdbSA1iUw1A5KNDxPw"
 );
