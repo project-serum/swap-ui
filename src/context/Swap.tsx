@@ -20,6 +20,7 @@ import {
   SPL_REGISTRY_SOLLET_TAG,
   SPL_REGISTRY_WORM_TAG,
 } from "./TokenList";
+import { useOwnedTokenAccount } from "../context/Token";
 
 const DEFAULT_SLIPPAGE_PERCENT = 0.5;
 
@@ -180,6 +181,7 @@ export function useCanSwap(): boolean {
   const { fromMint, toMint, fromAmount, toAmount } = useSwapContext();
   const { swapClient } = useDexContext();
   const { wormholeMap, solletMap } = useTokenListContext();
+  const fromWallet = useOwnedTokenAccount(fromMint);
   const fair = useSwapFair();
   const route = useRouteVerbose(fromMint, toMint);
   if (route === null) {
@@ -187,6 +189,9 @@ export function useCanSwap(): boolean {
   }
 
   return (
+    // From wallet exists.
+    fromWallet !== undefined &&
+    fromWallet !== null &&
     // Fair price is defined.
     fair !== undefined &&
     fair > 0 &&

@@ -38,8 +38,7 @@ export function TokenListContextProvider(props: any) {
     const tokens = tokenList.filter((t: TokenInfo) => {
       const isUsdxQuoted =
         t.extensions?.serumV3Usdt || t.extensions?.serumV3Usdc;
-      const isSol = t.address === "So11111111111111111111111111111111111111112";
-      return isUsdxQuoted && !isSol;
+      return isUsdxQuoted;
     });
     tokens.sort((a: TokenInfo, b: TokenInfo) =>
       a.symbol < b.symbol ? -1 : a.symbol > b.symbol ? 1 : 0

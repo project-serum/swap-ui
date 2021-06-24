@@ -1,7 +1,7 @@
 import React, { useContext, useState, useEffect } from "react";
 import * as assert from "assert";
 import { useAsync } from "react-async-hook";
-import { Provider } from "@project-serum/anchor";
+import { Provider, BN } from "@project-serum/anchor";
 import { PublicKey, Account } from "@solana/web3.js";
 import {
   MintInfo,
@@ -10,6 +10,7 @@ import {
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import { getOwnedTokenAccounts, parseTokenAccountData } from "../utils/tokens";
+import { WRAPPED_SOL_MINT } from "../utils/pubkeys";
 
 export type TokenContext = {
   provider: Provider;
@@ -27,6 +28,7 @@ export function TokenContextProvider(props: any) {
       setRefresh((r) => r + 1);
       return;
     }
+    // Fetch SPL tokens.
     getOwnedTokenAccounts(provider.connection, provider.wallet.publicKey).then(
       (accs) => {
         if (accs) {
@@ -35,6 +37,22 @@ export function TokenContextProvider(props: any) {
         }
       }
     );
+    // Fetch SOL balance.
+    provider.connection
+      .getAccountInfo(provider.wallet.publicKey)
+      .then((acc: { lamports: number }) => {
+        if (acc) {
+          _OWNED_TOKEN_ACCOUNTS_CACHE.push({
+            publicKey: provider.wallet.publicKey,
+            // @ts-ignore
+            account: {
+              amount: new BN(acc.lamports),
+              mint: WRAPPED_SOL_MINT,
+            },
+          });
+          setRefresh((r) => r + 1);
+        }
+      });
   }, [provider.wallet.publicKey, provider.connection]);
 
   return (
@@ -76,12 +94,32 @@ export function useOwnedTokenAccount(
       : 0
   );
 
-  const tokenAccount = tokenAccounts[0];
+  let tokenAccount = tokenAccounts[0];
+  const isSol = mint?.equals(WRAPPED_SOL_MINT);
 
   // Stream updates when the balance changes.
   useEffect(() => {
     let listener: number;
-    if (tokenAccount) {
+    // SOL is special cased since it's not an SPL token.
+    if (tokenAccount && isSol) {
+      listener = provider.connection.onAccountChange(
+        provider.wallet.publicKey,
+        (info: { lamports: number }) => {
+          const token = {
+            amount: new BN(info.lamports),
+            mint: WRAPPED_SOL_MINT,
+          } as TokenAccount;
+          if (token.amount !== tokenAccount.account.amount) {
+            const index = _OWNED_TOKEN_ACCOUNTS_CACHE.indexOf(tokenAccount);
+            assert.ok(index >= 0);
+            _OWNED_TOKEN_ACCOUNTS_CACHE[index].account = token;
+            setRefresh((r) => r + 1);
+          }
+        }
+      );
+    }
+    // SPL tokens.
+    else if (tokenAccount) {
       listener = provider.connection.onAccountChange(
         tokenAccount.publicKey,
         (info) => {
@@ -106,7 +144,7 @@ export function useOwnedTokenAccount(
     return undefined;
   }
 
-  if (tokenAccounts.length === 0) {
+  if (!isSol && tokenAccounts.length === 0) {
     return null;
   }
 
