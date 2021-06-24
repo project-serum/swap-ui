@@ -10,7 +10,7 @@ import {
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import { getOwnedTokenAccounts, parseTokenAccountData } from "../utils/tokens";
-import { WRAPPED_SOL_MINT } from "../utils/pubkeys";
+import { SOL_MINT } from "../utils/pubkeys";
 
 export type TokenContext = {
   provider: Provider;
@@ -47,7 +47,7 @@ export function TokenContextProvider(props: any) {
             // @ts-ignore
             account: {
               amount: new BN(acc.lamports),
-              mint: WRAPPED_SOL_MINT,
+              mint: SOL_MINT,
             },
           });
           setRefresh((r) => r + 1);
@@ -95,7 +95,7 @@ export function useOwnedTokenAccount(
   );
 
   let tokenAccount = tokenAccounts[0];
-  const isSol = mint?.equals(WRAPPED_SOL_MINT);
+  const isSol = mint?.equals(SOL_MINT);
 
   // Stream updates when the balance changes.
   useEffect(() => {
@@ -107,7 +107,7 @@ export function useOwnedTokenAccount(
         (info: { lamports: number }) => {
           const token = {
             amount: new BN(info.lamports),
-            mint: WRAPPED_SOL_MINT,
+            mint: SOL_MINT,
           } as TokenAccount;
           if (token.amount !== tokenAccount.account.amount) {
             const index = _OWNED_TOKEN_ACCOUNTS_CACHE.indexOf(tokenAccount);
@@ -190,4 +190,7 @@ const _OWNED_TOKEN_ACCOUNTS_CACHE: Array<{
 }> = [];
 
 // Cache storing all previously fetched mint infos.
-const _MINT_CACHE = new Map<string, Promise<MintInfo>>();
+// @ts-ignore
+const _MINT_CACHE = new Map<string, Promise<MintInfo>>([
+  [SOL_MINT.toString(), { decimals: 9 }],
+]);

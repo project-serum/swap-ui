@@ -31,7 +31,7 @@ import { useCanSwap, useReferral } from "../context/Swap";
 import TokenDialog from "./TokenDialog";
 import { SettingsButton } from "./Settings";
 import { InfoLabel } from "./Info";
-import { WRAPPED_SOL_MINT } from "../utils/pubkeys";
+import { SOL_MINT, WRAPPED_SOL_MINT } from "../utils/pubkeys";
 
 const useStyles = makeStyles((theme) => ({
   card: {
@@ -208,7 +208,7 @@ export function SwapTokenForm({
   const [showTokenDialog, setShowTokenDialog] = useState(false);
   const tokenAccount = useOwnedTokenAccount(mint);
   const mintAccount = useMint(mint);
-
+  console.log("swap token form", mint.toString(), mintAccount, tokenAccount);
   const balance =
     tokenAccount &&
     mintAccount &&
@@ -364,11 +364,10 @@ export function SwapButton() {
     let txs: { tx: Transaction; signers: Array<Signer | undefined> }[] = [];
     const amount = new BN(fromAmount * 10 ** fromMintInfo.decimals);
 
-    const isSol =
-      fromMint.equals(WRAPPED_SOL_MINT) || toMint.equals(WRAPPED_SOL_MINT);
+    const isSol = fromMint.equals(SOL_MINT) || toMint.equals(SOL_MINT);
     const wrappedSolAccount = isSol ? Keypair.generate() : undefined;
 
-    // Wrap the SOL into an SPL token.
+    // Wrap the SOL into wrapped SOL.
     if (isSol) {
       txs.push(
         await wrapSol(
@@ -401,12 +400,12 @@ export function SwapButton() {
         const toOpenOrders = toMarket
           ? openOrders.get(toMarket?.address.toString())
           : undefined;
-        const fromWalletAddr = fromMint.equals(WRAPPED_SOL_MINT)
+        const fromWalletAddr = fromMint.equals(SOL_MINT)
           ? wrappedSolAccount!.publicKey
           : fromWallet
           ? fromWallet.publicKey
           : undefined;
-        const toWalletAddr = toMint.equals(WRAPPED_SOL_MINT)
+        const toWalletAddr = toMint.equals(SOL_MINT)
           ? wrappedSolAccount!.publicKey
           : toWallet
           ? toWallet.publicKey
@@ -478,7 +477,7 @@ async function wrapSol(
   );
   // Transfer lamports. These will be converted to an SPL balance by the
   // token program.
-  if (fromMint.equals(WRAPPED_SOL_MINT)) {
+  if (fromMint.equals(SOL_MINT)) {
     tx.add(
       SystemProgram.transfer({
         fromPubkey: provider.wallet.publicKey,

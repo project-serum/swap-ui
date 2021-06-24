@@ -15,6 +15,8 @@ import {
   DEX_PID,
   USDC_MINT,
   USDT_MINT,
+  SOL_MINT,
+  WRAPPED_SOL_MINT,
   WORM_USDC_MINT,
   WORM_USDT_MINT,
   WORM_USDC_MARKET,
@@ -389,7 +391,11 @@ export function useFairRoute(
     if (fromMarket === undefined) {
       return undefined;
     }
-    if (fromMarket?.baseMintAddress.equals(fromMint)) {
+    if (
+      fromMarket?.baseMintAddress.equals(fromMint) ||
+      (fromMarket?.baseMintAddress.equals(WRAPPED_SOL_MINT) &&
+        fromMint.equals(SOL_MINT))
+    ) {
       return fromBbo.bestBid && 1.0 / fromBbo.bestBid;
     } else {
       return fromBbo.bestOffer && fromBbo.bestOffer;
@@ -442,7 +448,10 @@ export function useRouteVerbose(
       const [wormholeMarket, kind] = swapMarket;
       return { markets: [wormholeMarket], kind };
     }
-    const markets = swapClient.route(fromMint, toMint);
+    const markets = swapClient.route(
+      fromMint.equals(SOL_MINT) ? WRAPPED_SOL_MINT : fromMint,
+      toMint.equals(SOL_MINT) ? WRAPPED_SOL_MINT : toMint
+    );
     if (markets === null) {
       return null;
     }
