@@ -208,7 +208,7 @@ export function SwapTokenForm({
   const [showTokenDialog, setShowTokenDialog] = useState(false);
   const tokenAccount = useOwnedTokenAccount(mint);
   const mintAccount = useMint(mint);
-  console.log("swap token form", mint.toString(), mintAccount, tokenAccount);
+
   const balance =
     tokenAccount &&
     mintAccount &&
