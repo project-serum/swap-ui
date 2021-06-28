@@ -1,6 +1,6 @@
 {
   "name": "@project-serum/swap-ui",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "homepage": "https://github.com/project-serum/swap-ui",
