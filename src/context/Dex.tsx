@@ -383,7 +383,7 @@ export function useFairRoute(
   const fromBbo = useBbo(route ? route[0] : undefined);
   const fromMarket = useMarket(route ? route[0] : undefined);
   const toBbo = useBbo(route ? route[1] : undefined);
-  const isWrapUnwrap = useIsWrapSol(fromMint, toMint);
+  const { isWrapUnwrap } = useIsWrapSol(fromMint, toMint);
 
   if (isWrapUnwrap) {
     return undefined;

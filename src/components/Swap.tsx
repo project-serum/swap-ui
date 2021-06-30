@@ -6,6 +6,7 @@ import {
   SystemProgram,
   Signer,
   Account,
+  SYSVAR_RENT_PUBKEY,
 } from "@solana/web3.js";
 import {
   u64,
@@ -13,6 +14,7 @@ import {
   TOKEN_PROGRAM_ID,
   ASSOCIATED_TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
+import { OpenOrders } from "@project-serum/serum";
 import { BN, Provider } from "@project-serum/anchor";
 import {
   makeStyles,
@@ -37,7 +39,7 @@ import { useCanSwap, useReferral, useIsWrapSol } from "../context/Swap";
 import TokenDialog from "./TokenDialog";
 import { SettingsButton } from "./Settings";
 import { InfoLabel } from "./Info";
-import { SOL_MINT, WRAPPED_SOL_MINT } from "../utils/pubkeys";
+import { SOL_MINT, WRAPPED_SOL_MINT, DEX_PID } from "../utils/pubkeys";
 
 const useStyles = makeStyles((theme) => ({
   card: {
@@ -353,32 +355,44 @@ export function SwapButton() {
   const quoteMintInfo = useMint(quoteMint);
   const quoteWallet = useOwnedTokenAccount(quoteMint);
   const { isWrapSol, isUnwrapSol } = useIsWrapSol(fromMint, toMint);
+  const fromOpenOrders = fromMarket
+    ? openOrders.get(fromMarket?.address.toString())
+    : undefined;
+  const toOpenOrders = toMarket
+    ? openOrders.get(toMarket?.address.toString())
+    : undefined;
+  const disconnected = !swapClient.program.provider.wallet.publicKey;
+  const needsCreateAccounts =
+    !toWallet || !fromOpenOrders || (toMarket && !toOpenOrders);
 
   // Click handlers.
-  const sendCreateTokenAccountTransaction = async () => {
+  const sendCreateAccountsTransaction = async () => {
     if (!fromMintInfo || !toMintInfo) {
       throw new Error("Unable to calculate mint decimals");
     }
     if (!quoteMint || !quoteMintInfo) {
       throw new Error("Quote mint not found");
     }
-    const associatedTokenPubkey = await Token.getAssociatedTokenAddress(
-      ASSOCIATED_TOKEN_PROGRAM_ID,
-      TOKEN_PROGRAM_ID,
-      toMint,
-      swapClient.program.provider.wallet.publicKey
-    );
     const tx = new Transaction();
-    tx.add(
-      Token.createAssociatedTokenAccountInstruction(
+    const signers = [];
+    if (!toWallet) {
+      const associatedTokenPubkey = await Token.getAssociatedTokenAddress(
         ASSOCIATED_TOKEN_PROGRAM_ID,
         TOKEN_PROGRAM_ID,
         toMint,
-        associatedTokenPubkey,
-        swapClient.program.provider.wallet.publicKey,
         swapClient.program.provider.wallet.publicKey
-      )
-    );
+      );
+      tx.add(
+        Token.createAssociatedTokenAccountInstruction(
+          ASSOCIATED_TOKEN_PROGRAM_ID,
+          TOKEN_PROGRAM_ID,
+          toMint,
+          associatedTokenPubkey,
+          swapClient.program.provider.wallet.publicKey,
+          swapClient.program.provider.wallet.publicKey
+        )
+      );
+    }
     if (!quoteWallet && !quoteMint.equals(toMint)) {
       const quoteAssociatedPubkey = await Token.getAssociatedTokenAddress(
         ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -397,7 +411,55 @@ export function SwapButton() {
         )
       );
     }
-    await swapClient.program.provider.send(tx);
+    if (fromMarket && !fromOpenOrders) {
+      const ooFrom = Keypair.generate();
+      signers.push(ooFrom);
+      tx.add(
+        await OpenOrders.makeCreateAccountTransaction(
+          swapClient.program.provider.connection,
+          fromMarket.address,
+          swapClient.program.provider.wallet.publicKey,
+          ooFrom.publicKey,
+          DEX_PID
+        )
+      );
+      tx.add(
+        swapClient.program.instruction.initAccount({
+          accounts: {
+            openOrders: ooFrom.publicKey,
+            authority: swapClient.program.provider.wallet.publicKey,
+            market: fromMarket.address,
+            dexProgram: DEX_PID,
+            rent: SYSVAR_RENT_PUBKEY,
+          },
+        })
+      );
+    }
+    if (toMarket && !toOpenOrders) {
+      const ooTo = Keypair.generate();
+      signers.push(ooTo);
+      tx.add(
+        await OpenOrders.makeCreateAccountTransaction(
+          swapClient.program.provider.connection,
+          toMarket.address,
+          swapClient.program.provider.wallet.publicKey,
+          ooTo.publicKey,
+          DEX_PID
+        )
+      );
+      tx.add(
+        swapClient.program.instruction.initAccount({
+          accounts: {
+            openOrders: ooTo.publicKey,
+            authority: swapClient.program.provider.wallet.publicKey,
+            market: toMarket.address,
+            dexProgram: DEX_PID,
+            rent: SYSVAR_RENT_PUBKEY,
+          },
+        })
+      );
+    }
+    await swapClient.program.provider.send(tx, signers);
   };
   const sendWrapSolTransaction = async () => {
     if (!fromMintInfo || !toMintInfo) {
@@ -415,7 +477,7 @@ export function SwapButton() {
     // deleted.
     let wrappedSolPubkey;
 
-    // If the user already has a wrapped SOL account, then we perform a
+    // If the user already has a wrapped TSOL account, then we perform a
     // transfer to the existing wrapped SOl account by
     //
     // * generating a new one
@@ -534,12 +596,6 @@ export function SwapButton() {
         quoteDecimals: quoteMintInfo.decimals,
         strict: isStrict,
       };
-      const fromOpenOrders = fromMarket
-        ? openOrders.get(fromMarket?.address.toString())
-        : undefined;
-      const toOpenOrders = toMarket
-        ? openOrders.get(toMarket?.address.toString())
-        : undefined;
       const fromWalletAddr = fromMint.equals(SOL_MINT)
         ? wrappedSolAccount!.publicKey
         : fromWallet
@@ -597,13 +653,22 @@ export function SwapButton() {
 
     await swapClient.program.provider.sendAll(txs);
   };
-  return !toWallet && swapClient.program.provider.wallet.publicKey ? (
+  return disconnected ? (
     <Button
       variant="contained"
       className={styles.swapButton}
-      onClick={sendCreateTokenAccountTransaction}
+      onClick={sendCreateAccountsTransaction}
+      disabled={true}
     >
-      Create Token Account
+      Disconnected
+    </Button>
+  ) : needsCreateAccounts ? (
+    <Button
+      variant="contained"
+      className={styles.swapButton}
+      onClick={sendCreateAccountsTransaction}
+    >
+      Create Accounts
     </Button>
   ) : isWrapSol ? (
     <Button

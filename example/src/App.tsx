@@ -5,6 +5,7 @@ import { Provider } from "@project-serum/anchor";
 // @ts-ignore
 import Wallet from "@project-serum/sol-wallet-adapter";
 import {
+  PublicKey,
   Signer,
   ConfirmOptions,
   Connection,
@@ -97,7 +98,7 @@ function AppInner() {
       setIsConnected(false);
     });
   }, [wallet, enqueueSnackbar]);
-
+  const ref = new PublicKey("D6a16baEftcA95sBsdQ6AoQpb5cABsk15cXxS1vn7NAg");
   return (
     <Grid
       container
@@ -112,7 +113,9 @@ function AppInner() {
       >
         {!isConnected ? "Connect" : "Disconnect"}
       </Button>
-      {tokenList && <Swap provider={provider} tokenList={tokenList} />}
+      {tokenList && (
+        <Swap provider={provider} referral={ref} tokenList={tokenList} />
+      )}
     </Grid>
   );
 }

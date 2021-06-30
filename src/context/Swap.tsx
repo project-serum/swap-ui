@@ -179,14 +179,13 @@ function _useSwapFair(
   toMint: PublicKey,
   fairOverride: number | null
 ): number | undefined {
-  const { isWrapSol, isUnwrapSol } = useIsWrapSol(fromMint, toMint);
+  const { isWrapUnwrap } = useIsWrapSol(fromMint, toMint);
   const fairRoute = useFairRoute(fromMint, toMint);
   const fair = fairOverride === null ? fairRoute : fairOverride;
 
-  if (isWrapSol || isUnwrapSol) {
+  if (isWrapUnwrap) {
     return 1;
   }
-
   return fair;
 }
 
@@ -202,10 +201,11 @@ export function useIsWrapSol(
     fromMint.equals(SOL_MINT) && toMint.equals(WRAPPED_SOL_MINT);
   const isUnwrapSol =
     fromMint.equals(WRAPPED_SOL_MINT) && toMint.equals(SOL_MINT);
+  const isWrapUnwrap = isWrapSol || isUnwrapSol;
   return {
     isWrapSol,
     isUnwrapSol,
-    isWrapUnwrap: isWrapSol || isUnwrapSol,
+    isWrapUnwrap,
   };
 }
 
