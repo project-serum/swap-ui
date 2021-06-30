@@ -26,6 +26,7 @@ import {
 import { useTokenMap, useTokenListContext } from "./TokenList";
 import { fetchSolletInfo, requestWormholeSwapMarketIfNeeded } from "./Sollet";
 import { setMintCache } from "./Token";
+import { useIsWrapSol } from "./Swap";
 
 const BASE_TAKER_FEE_BPS = 0.0022;
 export const FEE_MULTIPLIER = 1 - BASE_TAKER_FEE_BPS;
@@ -382,6 +383,11 @@ export function useFairRoute(
   const fromBbo = useBbo(route ? route[0] : undefined);
   const fromMarket = useMarket(route ? route[0] : undefined);
   const toBbo = useBbo(route ? route[1] : undefined);
+  const isWrapUnwrap = useIsWrapSol(fromMint, toMint);
+
+  if (isWrapUnwrap) {
+    return undefined;
+  }
 
   if (route === null) {
     return undefined;

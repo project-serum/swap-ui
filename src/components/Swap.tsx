@@ -5,8 +5,14 @@ import {
   Transaction,
   SystemProgram,
   Signer,
+  Account,
 } from "@solana/web3.js";
-import { Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import {
+  u64,
+  Token,
+  TOKEN_PROGRAM_ID,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+} from "@solana/spl-token";
 import { BN, Provider } from "@project-serum/anchor";
 import {
   makeStyles,
@@ -27,7 +33,7 @@ import {
 } from "../context/Dex";
 import { useTokenMap } from "../context/TokenList";
 import { useMint, useOwnedTokenAccount } from "../context/Token";
-import { useCanSwap, useReferral } from "../context/Swap";
+import { useCanSwap, useReferral, useIsWrapSol } from "../context/Swap";
 import TokenDialog from "./TokenDialog";
 import { SettingsButton } from "./Settings";
 import { InfoLabel } from "./Info";
@@ -304,7 +310,6 @@ function TokenName({ mint, style }: { mint: PublicKey; style: any }) {
   const tokenMap = useTokenMap();
   const theme = useTheme();
   let tokenInfo = tokenMap.get(mint.toString());
-
   return (
     <Typography
       style={{
@@ -347,8 +352,159 @@ export function SwapButton() {
   const quoteMint = fromMarket && fromMarket.quoteMintAddress;
   const quoteMintInfo = useMint(quoteMint);
   const quoteWallet = useOwnedTokenAccount(quoteMint);
+  const { isWrapSol, isUnwrapSol } = useIsWrapSol(fromMint, toMint);
 
-  // Click handler.
+  // Click handlers.
+  const sendCreateTokenAccountTransaction = async () => {
+    if (!fromMintInfo || !toMintInfo) {
+      throw new Error("Unable to calculate mint decimals");
+    }
+    if (!quoteMint || !quoteMintInfo) {
+      throw new Error("Quote mint not found");
+    }
+    const associatedTokenPubkey = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      toMint,
+      swapClient.program.provider.wallet.publicKey
+    );
+    const tx = new Transaction();
+    tx.add(
+      Token.createAssociatedTokenAccountInstruction(
+        ASSOCIATED_TOKEN_PROGRAM_ID,
+        TOKEN_PROGRAM_ID,
+        toMint,
+        associatedTokenPubkey,
+        swapClient.program.provider.wallet.publicKey,
+        swapClient.program.provider.wallet.publicKey
+      )
+    );
+    if (!quoteWallet && !quoteMint.equals(toMint)) {
+      const quoteAssociatedPubkey = await Token.getAssociatedTokenAddress(
+        ASSOCIATED_TOKEN_PROGRAM_ID,
+        TOKEN_PROGRAM_ID,
+        quoteMint,
+        swapClient.program.provider.wallet.publicKey
+      );
+      tx.add(
+        Token.createAssociatedTokenAccountInstruction(
+          ASSOCIATED_TOKEN_PROGRAM_ID,
+          TOKEN_PROGRAM_ID,
+          quoteMint,
+          quoteAssociatedPubkey,
+          swapClient.program.provider.wallet.publicKey,
+          swapClient.program.provider.wallet.publicKey
+        )
+      );
+    }
+    await swapClient.program.provider.send(tx);
+  };
+  const sendWrapSolTransaction = async () => {
+    if (!fromMintInfo || !toMintInfo) {
+      throw new Error("Unable to calculate mint decimals");
+    }
+    if (!quoteMint || !quoteMintInfo) {
+      throw new Error("Quote mint not found");
+    }
+    const amount = new u64(fromAmount * 10 ** fromMintInfo.decimals);
+
+    // Create a new Wrapped SOL account with the given amount.
+    //
+    // If a wrapped SOL wallet doesn't exist, then create the associated
+    // token account. Otherwise, create an AUX account that is immediately
+    // deleted.
+    let wrappedSolPubkey;
+
+    // If the user already has a wrapped SOL account, then we perform a
+    // transfer to the existing wrapped SOl account by
+    //
+    // * generating a new one
+    // * minting wrapped sol
+    // * sending tokens to the previously existing wrapped sol account
+    // * closing the newly created wrapped sol account
+    //
+    // If a wrapped SOL account doesn't exist, then we create an associated
+    // token account to mint the SOL and then leave it open.
+    //
+    const wrappedSolAccount = toWallet ? Keypair.generate() : undefined;
+    wrappedSolPubkey = wrappedSolAccount
+      ? wrappedSolAccount.publicKey
+      : await Token.getAssociatedTokenAddress(
+          ASSOCIATED_TOKEN_PROGRAM_ID,
+          TOKEN_PROGRAM_ID,
+          fromMint,
+          swapClient.program.provider.wallet.publicKey
+        );
+
+    // Wrap the SOL.
+    const { tx, signers } = await wrapSol(
+      swapClient.program.provider,
+      fromMint,
+      amount,
+      wrappedSolAccount
+    );
+
+    // Close the newly created account, if needed.
+    if (toWallet) {
+      tx.add(
+        Token.createTransferInstruction(
+          TOKEN_PROGRAM_ID,
+          wrappedSolPubkey,
+          toWallet.publicKey,
+          swapClient.program.provider.wallet.publicKey,
+          [],
+          amount
+        )
+      );
+      const { tx: unwrapTx, signers: unwrapSigners } = unwrapSol(
+        swapClient.program.provider,
+        wrappedSolPubkey
+      );
+      tx.add(unwrapTx);
+      signers.push(...unwrapSigners);
+    }
+    await swapClient.program.provider.send(tx, signers);
+  };
+  const sendUnwrapSolTransaction = async () => {
+    if (!fromMintInfo || !toMintInfo) {
+      throw new Error("Unable to calculate mint decimals");
+    }
+    if (!quoteMint || !quoteMintInfo) {
+      throw new Error("Quote mint not found");
+    }
+    const amount = new u64(fromAmount * 10 ** fromMintInfo.decimals);
+
+    // Unwrap *without* closing the existing wrapped account:
+    //
+    // * Create a new Wrapped SOL account.
+    // * Send wrapped tokens there.
+    // * Unwrap (i.e. close the newly created wrapped account).
+    const wrappedSolAccount = Keypair.generate();
+    const { tx, signers } = await wrapSol(
+      swapClient.program.provider,
+      fromMint,
+      amount,
+      wrappedSolAccount
+    );
+    tx.add(
+      Token.createTransferInstruction(
+        TOKEN_PROGRAM_ID,
+        fromWallet!.publicKey,
+        wrappedSolAccount.publicKey,
+        swapClient.program.provider.wallet.publicKey,
+        [],
+        amount
+      )
+    );
+    const { tx: unwrapTx, signers: unwrapSigners } = unwrapSol(
+      swapClient.program.provider,
+      wrappedSolAccount.publicKey
+    );
+    tx.add(unwrapTx);
+    signers.push(...unwrapSigners);
+
+    await swapClient.program.provider.send(tx, signers);
+  };
   const sendSwapTransaction = async () => {
     if (!fromMintInfo || !toMintInfo) {
       throw new Error("Unable to calculate mint decimals");
@@ -422,13 +578,13 @@ export function SwapButton() {
       }
       const { tx: wrapTx, signers: wrapSigners } = await wrapSol(
         swapClient.program.provider,
-        wrappedSolAccount as Keypair,
         fromMint,
-        amount
+        amount,
+        wrappedSolAccount as Keypair
       );
       const { tx: unwrapTx, signers: unwrapSigners } = unwrapSol(
         swapClient.program.provider,
-        wrappedSolAccount as Keypair
+        wrappedSolAccount!.publicKey
       );
       const tx = new Transaction();
       tx.add(wrapTx);
@@ -441,7 +597,33 @@ export function SwapButton() {
 
     await swapClient.program.provider.sendAll(txs);
   };
-  return (
+  return !toWallet && swapClient.program.provider.wallet.publicKey ? (
+    <Button
+      variant="contained"
+      className={styles.swapButton}
+      onClick={sendCreateTokenAccountTransaction}
+    >
+      Create Token Account
+    </Button>
+  ) : isWrapSol ? (
+    <Button
+      variant="contained"
+      className={styles.swapButton}
+      onClick={sendWrapSolTransaction}
+      disabled={!canSwap}
+    >
+      Wrap SOL
+    </Button>
+  ) : isUnwrapSol ? (
+    <Button
+      variant="contained"
+      className={styles.swapButton}
+      onClick={sendUnwrapSolTransaction}
+      disabled={!canSwap}
+    >
+      Unwrap SOL
+    </Button>
+  ) : (
     <Button
       variant="contained"
       className={styles.swapButton}
@@ -453,33 +635,56 @@ export function SwapButton() {
   );
 }
 
+// If wrappedSolAccount is undefined, then creates the account with
+// an associated token account.
 async function wrapSol(
   provider: Provider,
-  wrappedSolAccount: Keypair,
   fromMint: PublicKey,
-  amount: BN
+  amount: BN,
+  wrappedSolAccount?: Keypair
 ): Promise<{ tx: Transaction; signers: Array<Signer | undefined> }> {
   const tx = new Transaction();
-  const signers = [wrappedSolAccount];
+  const signers = wrappedSolAccount ? [wrappedSolAccount] : [];
+  let wrappedSolPubkey;
   // Create new, rent exempt account.
-  tx.add(
-    SystemProgram.createAccount({
-      fromPubkey: provider.wallet.publicKey,
-      newAccountPubkey: wrappedSolAccount.publicKey,
-      lamports: await Token.getMinBalanceRentForExemptAccount(
-        provider.connection
-      ),
-      space: 165,
-      programId: TOKEN_PROGRAM_ID,
-    })
-  );
+  if (wrappedSolAccount === undefined) {
+    wrappedSolPubkey = await Token.getAssociatedTokenAddress(
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+      TOKEN_PROGRAM_ID,
+      fromMint,
+      provider.wallet.publicKey
+    );
+    tx.add(
+      Token.createAssociatedTokenAccountInstruction(
+        ASSOCIATED_TOKEN_PROGRAM_ID,
+        TOKEN_PROGRAM_ID,
+        fromMint,
+        wrappedSolPubkey,
+        provider.wallet.publicKey,
+        provider.wallet.publicKey
+      )
+    );
+  } else {
+    wrappedSolPubkey = wrappedSolAccount.publicKey;
+    tx.add(
+      SystemProgram.createAccount({
+        fromPubkey: provider.wallet.publicKey,
+        newAccountPubkey: wrappedSolPubkey,
+        lamports: await Token.getMinBalanceRentForExemptAccount(
+          provider.connection
+        ),
+        space: 165,
+        programId: TOKEN_PROGRAM_ID,
+      })
+    );
+  }
   // Transfer lamports. These will be converted to an SPL balance by the
   // token program.
   if (fromMint.equals(SOL_MINT)) {
     tx.add(
       SystemProgram.transfer({
         fromPubkey: provider.wallet.publicKey,
-        toPubkey: wrappedSolAccount.publicKey,
+        toPubkey: wrappedSolPubkey,
         lamports: amount.toNumber(),
       })
     );
@@ -489,7 +694,7 @@ async function wrapSol(
     Token.createInitAccountInstruction(
       TOKEN_PROGRAM_ID,
       WRAPPED_SOL_MINT,
-      wrappedSolAccount.publicKey,
+      wrappedSolPubkey,
       provider.wallet.publicKey
     )
   );
@@ -498,13 +703,13 @@ async function wrapSol(
 
 function unwrapSol(
   provider: Provider,
-  wrappedSolAccount: Keypair
+  wrappedSol: PublicKey
 ): { tx: Transaction; signers: Array<Signer | undefined> } {
   const tx = new Transaction();
   tx.add(
     Token.createCloseAccountInstruction(
       TOKEN_PROGRAM_ID,
-      wrappedSolAccount.publicKey,
+      wrappedSol,
       provider.wallet.publicKey,
       provider.wallet.publicKey,
       []
