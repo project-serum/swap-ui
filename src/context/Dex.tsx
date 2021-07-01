@@ -36,6 +36,7 @@ type DexContext = {
   openOrders: Map<string, Array<OpenOrders>>;
   closeOpenOrders: (openOrder: OpenOrders) => void;
   swapClient: SwapClient;
+  isLoaded: boolean;
 };
 const _DexContext = React.createContext<DexContext | null>(null);
 
@@ -43,6 +44,7 @@ export function DexContextProvider(props: any) {
   const [ooAccounts, setOoAccounts] = useState<Map<string, Array<OpenOrders>>>(
     new Map()
   );
+  const [isLoaded, setIsLoaded] = useState(false);
   const swapClient = props.swapClient;
 
   // Removes the given open orders from the context.
@@ -154,6 +156,8 @@ export function DexContextProvider(props: any) {
           new Promise<Market>((resolve) => resolve(m.account))
         );
       });
+
+      setIsLoaded(true);
     });
   }, [
     swapClient.program.provider.connection,
@@ -166,6 +170,7 @@ export function DexContextProvider(props: any) {
         openOrders: ooAccounts,
         closeOpenOrders,
         swapClient,
+        isLoaded,
       }}
     >
       {props.children}

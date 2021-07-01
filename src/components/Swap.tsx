@@ -34,7 +34,11 @@ import {
   FEE_MULTIPLIER,
 } from "../context/Dex";
 import { useTokenMap } from "../context/TokenList";
-import { useMint, useOwnedTokenAccount } from "../context/Token";
+import {
+  useMint,
+  useOwnedTokenAccount,
+  useTokenContext,
+} from "../context/Token";
 import { useCanSwap, useReferral, useIsWrapSol } from "../context/Swap";
 import TokenDialog from "./TokenDialog";
 import { SettingsButton } from "./Settings";
@@ -335,7 +339,8 @@ export function SwapButton() {
     isClosingNewAccounts,
     isStrict,
   } = useSwapContext();
-  const { swapClient } = useDexContext();
+  const { swapClient, isLoaded: isDexLoaded } = useDexContext();
+  const { isLoaded: isTokensLoaded } = useTokenContext();
   const fromMintInfo = useMint(fromMint);
   const toMintInfo = useMint(toMint);
   const openOrders = useOpenOrders();
@@ -649,16 +654,32 @@ export function SwapButton() {
 
     await swapClient.program.provider.sendAll(txs);
   };
-  return disconnected ? (
-    <Button
-      variant="contained"
-      className={styles.swapButton}
-      onClick={sendCreateAccountsTransaction}
-      disabled={true}
-    >
-      Disconnected
-    </Button>
-  ) : needsCreateAccounts ? (
+
+  if (disconnected) {
+    return (
+      <Button
+        variant="contained"
+        className={styles.swapButton}
+        onClick={sendCreateAccountsTransaction}
+        disabled={true}
+      >
+        Disconnected
+      </Button>
+    );
+  }
+  if (!isDexLoaded || !isTokensLoaded) {
+    return (
+      <Button
+        variant="contained"
+        className={styles.swapButton}
+        onClick={sendSwapTransaction}
+        disabled={true}
+      >
+        Swap
+      </Button>
+    );
+  }
+  return needsCreateAccounts ? (
     <Button
       variant="contained"
       className={styles.swapButton}
