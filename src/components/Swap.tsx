@@ -460,6 +460,9 @@ export function SwapButton() {
       );
     }
     await swapClient.program.provider.send(tx, signers);
+
+    // TODO: update local data stores to add the newly created token
+    //       and open orders accounts.
   };
   const sendWrapSolTransaction = async () => {
     if (!fromMintInfo || !toMintInfo) {
@@ -470,14 +473,7 @@ export function SwapButton() {
     }
     const amount = new u64(fromAmount * 10 ** fromMintInfo.decimals);
 
-    // Create a new Wrapped SOL account with the given amount.
-    //
-    // If a wrapped SOL wallet doesn't exist, then create the associated
-    // token account. Otherwise, create an AUX account that is immediately
-    // deleted.
-    let wrappedSolPubkey;
-
-    // If the user already has a wrapped TSOL account, then we perform a
+    // If the user already has a wrapped SOL account, then we perform a
     // transfer to the existing wrapped SOl account by
     //
     // * generating a new one
@@ -489,7 +485,7 @@ export function SwapButton() {
     // token account to mint the SOL and then leave it open.
     //
     const wrappedSolAccount = toWallet ? Keypair.generate() : undefined;
-    wrappedSolPubkey = wrappedSolAccount
+    const wrappedSolPubkey = wrappedSolAccount
       ? wrappedSolAccount.publicKey
       : await Token.getAssociatedTokenAddress(
           ASSOCIATED_TOKEN_PROGRAM_ID,
