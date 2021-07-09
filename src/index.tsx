@@ -1,4 +1,3 @@
-import "@fontsource/roboto";
 import { ReactElement } from "react";
 import { PublicKey } from "@solana/web3.js";
 import { TokenListContainer } from "@solana/spl-token-registry";
