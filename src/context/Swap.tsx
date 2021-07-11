@@ -8,7 +8,13 @@ import {
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import { Market } from "@project-serum/serum";
-import { SRM_MINT, USDC_MINT, USDT_MINT } from "../utils/pubkeys";
+import {
+  SRM_MINT,
+  USDC_MINT,
+  USDT_MINT,
+  SOL_MINT,
+  WRAPPED_SOL_MINT,
+} from "../utils/pubkeys";
 import {
   useFairRoute,
   useRouteVerbose,
@@ -84,8 +90,10 @@ export function SwapContextProvider(props: any) {
   const [isStrict, setIsStrict] = useState(false);
   const [slippage, setSlippage] = useState(DEFAULT_SLIPPAGE_PERCENT);
   const [fairOverride, setFairOverride] = useState<number | null>(null);
+  const { isWrapUnwrap } = useIsWrapSol(fromMint, toMint);
   const fair = _useSwapFair(fromMint, toMint, fairOverride);
   const referral = props.referral;
+  const feeMultiplier = isWrapUnwrap ? 1 : FEE_MULTIPLIER;
 
   assert.ok(slippage >= 0);
 
@@ -112,7 +120,7 @@ export function SwapContextProvider(props: any) {
       return;
     }
     _setFromAmount(amount);
-    _setToAmount(FEE_MULTIPLIER * (amount / fair));
+    _setToAmount(feeMultiplier * (amount / fair));
   };
 
   const setToAmount = (amount: number) => {
@@ -171,9 +179,34 @@ function _useSwapFair(
   toMint: PublicKey,
   fairOverride: number | null
 ): number | undefined {
+  const { isWrapUnwrap } = useIsWrapSol(fromMint, toMint);
   const fairRoute = useFairRoute(fromMint, toMint);
   const fair = fairOverride === null ? fairRoute : fairOverride;
+
+  if (isWrapUnwrap) {
+    return 1;
+  }
   return fair;
+}
+
+export function useIsWrapSol(
+  fromMint: PublicKey,
+  toMint: PublicKey
+): {
+  isWrapSol: boolean;
+  isUnwrapSol: boolean;
+  isWrapUnwrap: boolean;
+} {
+  const isWrapSol =
+    fromMint.equals(SOL_MINT) && toMint.equals(WRAPPED_SOL_MINT);
+  const isUnwrapSol =
+    fromMint.equals(WRAPPED_SOL_MINT) && toMint.equals(SOL_MINT);
+  const isWrapUnwrap = isWrapSol || isUnwrapSol;
+  return {
+    isWrapSol,
+    isUnwrapSol,
+    isWrapUnwrap,
+  };
 }
 
 // Returns true if the user can swap with the current context.

@@ -14,12 +14,14 @@ import { SOL_MINT } from "../utils/pubkeys";
 
 export type TokenContext = {
   provider: Provider;
+  isLoaded: boolean;
 };
 const _TokenContext = React.createContext<TokenContext | null>(null);
 
 export function TokenContextProvider(props: any) {
   const provider = props.provider;
   const [, setRefresh] = useState(0);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   // Fetch all the owned token accounts for the wallet.
   useEffect(() => {
@@ -35,6 +37,8 @@ export function TokenContextProvider(props: any) {
           _OWNED_TOKEN_ACCOUNTS_CACHE.push(...accs);
           setRefresh((r) => r + 1);
         }
+        console.log("setting is loaded");
+        setIsLoaded(true);
       }
     );
     // Fetch SOL balance.
@@ -59,6 +63,7 @@ export function TokenContextProvider(props: any) {
     <_TokenContext.Provider
       value={{
         provider,
+        isLoaded,
       }}
     >
       {props.children}
@@ -66,7 +71,7 @@ export function TokenContextProvider(props: any) {
   );
 }
 
-function useTokenContext() {
+export function useTokenContext() {
   const ctx = useContext(_TokenContext);
   if (ctx === null) {
     throw new Error("Context not available");
