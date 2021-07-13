@@ -9,7 +9,10 @@ import {
   Token,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
-import { getOwnedTokenAccounts, parseTokenAccountData } from "../utils/tokens";
+import {
+  getOwnedAssociatedTokenAccounts,
+  parseTokenAccountData,
+} from "../utils/tokens";
 import { SOL_MINT } from "../utils/pubkeys";
 
 export type TokenContext = {
@@ -29,14 +32,16 @@ export function TokenContextProvider(props: any) {
       return;
     }
     // Fetch SPL tokens.
-    getOwnedTokenAccounts(provider.connection, provider.wallet.publicKey).then(
-      (accs) => {
-        if (accs) {
-          _OWNED_TOKEN_ACCOUNTS_CACHE.push(...accs);
-          setRefresh((r) => r + 1);
-        }
+    getOwnedAssociatedTokenAccounts(
+      provider.connection,
+      provider.wallet.publicKey
+    ).then((accs) => {
+      if (accs) {
+        // @ts-ignore
+        _OWNED_TOKEN_ACCOUNTS_CACHE.push(...accs);
+        setRefresh((r) => r + 1);
       }
-    );
+    });
     // Fetch SOL balance.
     provider.connection
       .getAccountInfo(provider.wallet.publicKey)
