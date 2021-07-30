@@ -58,7 +58,7 @@ export function TokenContextProvider(props: any) {
           setRefresh((r) => r + 1);
         }
       });
-  }, [provider.wallet.publicKey?.toString(), provider.connection]);
+  }, [provider.wallet.publicKey, provider.connection]);
 
   return (
     <_TokenContext.Provider
@@ -143,7 +143,7 @@ export function useOwnedTokenAccount(
         provider.connection.removeAccountChangeListener(listener);
       }
     };
-  }, [provider.connection, tokenAccount?.publicKey.toString()]);
+  }, [provider.connection, tokenAccount]);
 
   if (mint === undefined) {
     return undefined;
@@ -176,7 +176,7 @@ export function useMint(mint?: PublicKey): MintInfo | undefined | null {
     const mintInfo = mintClient.getMintInfo();
     _MINT_CACHE.set(mint.toString(), mintInfo);
     return mintInfo;
-  }, [provider.connection, mint?.toString()]);
+  }, [provider.connection, mint]);
 
   if (asyncMintInfo.result) {
     return asyncMintInfo.result;
