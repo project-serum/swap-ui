@@ -4,6 +4,7 @@
 /coverage
 /build
 .DS_Store
+.idea
 .env.local
 .env.development.local
 .env.test.local

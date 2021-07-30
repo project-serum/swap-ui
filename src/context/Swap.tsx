@@ -20,7 +20,7 @@ import {
   SPL_REGISTRY_SOLLET_TAG,
   SPL_REGISTRY_WORM_TAG,
 } from "./TokenList";
-import { useOwnedTokenAccount } from "../context/Token";
+import { useMint, useOwnedTokenAccount } from "../context/Token";
 
 const DEFAULT_SLIPPAGE_PERCENT = 0.5;
 
@@ -184,6 +184,15 @@ export function useCanSwap(): boolean {
   const fromWallet = useOwnedTokenAccount(fromMint);
   const fair = useSwapFair();
   const route = useRouteVerbose(fromMint, toMint);
+
+  const fromTokenAccount = useOwnedTokenAccount(fromMint);
+  const fromMintAccount = useMint(fromMint);
+  const fromBalance =
+    fromTokenAccount &&
+    fromMintAccount &&
+    fromTokenAccount.account.amount.toNumber() / 10 ** fromMintAccount.decimals;
+  const hasFromBalance = (fromBalance || 0) >= fromAmount;
+
   if (route === null) {
     return false;
   }
@@ -202,6 +211,8 @@ export function useCanSwap(): boolean {
     // Trade amounts greater than zero.
     fromAmount > 0 &&
     toAmount > 0 &&
+    // From token account has enougth balance
+    hasFromBalance &&
     // Trade route exists.
     route !== null &&
     // Wormhole <-> native markets must have the wormhole token as the

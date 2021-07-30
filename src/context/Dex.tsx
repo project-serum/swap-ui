@@ -156,7 +156,7 @@ export function DexContextProvider(props: any) {
     });
   }, [
     swapClient.program.provider.connection,
-    swapClient.program.provider.wallet.publicKey,
+    swapClient.program.provider.wallet.publicKey?.toString(),
     swapClient.program.provider.opts,
   ]);
   return (
