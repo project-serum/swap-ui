@@ -10,7 +10,6 @@ import {
   AccountInfo as TokenAccount,
 } from "@solana/spl-token";
 import { Connection, PublicKey } from "@solana/web3.js";
-import * as bs58 from "bs58";
 
 export async function getOwnedAssociatedTokenAccounts(
   connection: Connection,
@@ -18,48 +17,21 @@ export async function getOwnedAssociatedTokenAccounts(
 ) {
   let filters = getOwnedAccountsFilters(publicKey);
   // @ts-ignore
-  let resp = await connection._rpcRequest("getProgramAccounts", [
-    TOKEN_PROGRAM_ID.toBase58(),
-    {
-      commitment: connection.commitment,
-      filters,
-    },
-  ]);
-  if (resp.error) {
-    throw new Error(
-      "failed to get token accounts owned by " +
-        publicKey.toBase58() +
-        ": " +
-        resp.error.message
-    );
-  }
-  const accs = resp.result
+  let resp = await connection.getProgramAccounts(TOKEN_PROGRAM_ID, {
+    commitment: connection.commitment,
+    filters,
+  });
+
+  const accs = resp
     .map(({ pubkey, account: { data, executable, owner, lamports } }: any) => ({
       publicKey: new PublicKey(pubkey),
       accountInfo: {
-        data: bs58.decode(data),
+        data,
         executable,
         owner: new PublicKey(owner),
         lamports,
       },
     }))
-    .filter(({ accountInfo }: any) => {
-      // TODO: remove this check once mainnet is updated
-      return filters.every((filter) => {
-        if (filter.dataSize) {
-          return accountInfo.data.length === filter.dataSize;
-        } else if (filter.memcmp) {
-          let filterBytes = bs58.decode(filter.memcmp.bytes);
-          return accountInfo.data
-            .slice(
-              filter.memcmp.offset,
-              filter.memcmp.offset + filterBytes.length
-            )
-            .equals(filterBytes);
-        }
-        return false;
-      });
-    })
     .map(({ publicKey, accountInfo }: any) => {
       return { publicKey, account: parseTokenAccountData(accountInfo.data) };
     });
