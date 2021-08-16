@@ -1,33 +1,18 @@
 import { ReactElement } from "react";
-import { PublicKey } from "@solana/web3.js";
-import { TokenListContainer } from "@solana/spl-token-registry";
-import { Provider } from "@project-serum/anchor";
 import { Swap as SwapClient } from "@project-serum/swap";
 import {
   createMuiTheme,
   ThemeOptions,
   ThemeProvider,
 } from "@material-ui/core/styles";
-import {
-  SwapContextProvider,
-  useSwapContext,
-  useSwapFair,
-} from "./context/Swap";
-import {
-  DexContextProvider,
-  useBbo,
-  useFairRoute,
-  useMarketName,
-} from "./context/Dex";
-import { TokenListContextProvider, useTokenMap } from "./context/TokenList";
-import { TokenContextProvider, useMint } from "./context/Token";
-import SwapCard, {
-  ArrowButton,
-  SwapButton,
-  SwapHeader,
-  SwapTokenForm,
-} from "./components/Swap";
-import TokenDialog from "./components/TokenDialog";
+import { TokenListContextProvider } from "./context/TokenList";
+import { TokenContextProvider } from "./context/Token";
+import { DexContextProvider } from "./context/Dex";
+import { SwapContextProvider } from "./context/Swap";
+import SwapCard from "./components/Swap";
+import { Provider } from "@project-serum/anchor";
+import { TokenListContainer } from "@solana/spl-token-registry";
+import { PublicKey } from "@solana/web3.js";
 
 /**
  * A`Swap` component that can be embedded into applications. To use,
@@ -165,31 +150,4 @@ export type SwapProps = {
    * Styling properties for the from and to token containers.
    */
   swapTokenContainerStyle?: any;
-};
-
-export {
-  // Components.
-  Swap,
-  SwapCard,
-  SwapHeader,
-  SwapTokenForm,
-  ArrowButton,
-  SwapButton,
-  TokenDialog,
-  // Providers and context.
-  // Swap.
-  SwapContextProvider,
-  useSwapContext,
-  useSwapFair,
-  // TokenList.
-  TokenListContextProvider,
-  useTokenMap,
-  // Token.
-  TokenContextProvider,
-  useMint,
-  // Dex.
-  DexContextProvider,
-  useFairRoute,
-  useMarketName,
-  useBbo,
 };
