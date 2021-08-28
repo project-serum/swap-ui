@@ -5,62 +5,60 @@ import * as BufferLayout from "buffer-layout";
 import { BN } from "@project-serum/anchor";
 import {
   TOKEN_PROGRAM_ID,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+  Token,
   AccountInfo as TokenAccount,
 } from "@solana/spl-token";
 import { Connection, PublicKey } from "@solana/web3.js";
 import * as bs58 from "bs58";
+import { CachedToken } from "../context/Token";
 
-export async function getOwnedTokenAccounts(
+export async function getOwnedAssociatedTokenAccounts(
   connection: Connection,
   publicKey: PublicKey
 ) {
   let filters = getOwnedAccountsFilters(publicKey);
   // @ts-ignore
-  let resp = await connection._rpcRequest("getProgramAccounts", [
-    TOKEN_PROGRAM_ID.toBase58(),
-    {
-      commitment: connection.commitment,
-      filters,
-    },
-  ]);
-  if (resp.error) {
-    throw new Error(
-      "failed to get token accounts owned by " +
-        publicKey.toBase58() +
-        ": " +
-        resp.error.message
-    );
-  }
-  return resp.result
+  let resp = await connection.getProgramAccounts(TOKEN_PROGRAM_ID, {
+    commitment: connection.commitment,
+    filters,
+  });
+
+  const accs = resp
     .map(({ pubkey, account: { data, executable, owner, lamports } }: any) => ({
       publicKey: new PublicKey(pubkey),
       accountInfo: {
-        data: bs58.decode(data),
+        data,
         executable,
         owner: new PublicKey(owner),
         lamports,
       },
     }))
-    .filter(({ accountInfo }: any) => {
-      // TODO: remove this check once mainnet is updated
-      return filters.every((filter) => {
-        if (filter.dataSize) {
-          return accountInfo.data.length === filter.dataSize;
-        } else if (filter.memcmp) {
-          let filterBytes = bs58.decode(filter.memcmp.bytes);
-          return accountInfo.data
-            .slice(
-              filter.memcmp.offset,
-              filter.memcmp.offset + filterBytes.length
-            )
-            .equals(filterBytes);
-        }
-        return false;
-      });
-    })
     .map(({ publicKey, accountInfo }: any) => {
       return { publicKey, account: parseTokenAccountData(accountInfo.data) };
     });
+
+  return (
+    (
+      await Promise.all(
+        accs
+          // @ts-ignore
+          .map(async (ta) => {
+            const ata = await Token.getAssociatedTokenAddress(
+              ASSOCIATED_TOKEN_PROGRAM_ID,
+              TOKEN_PROGRAM_ID,
+              ta.account.mint,
+              publicKey
+            );
+            return [ta, ata];
+          })
+      )
+    )
+      // @ts-ignore
+      .filter(([ta, ata]) => ta.publicKey.equals(ata))
+      // @ts-ignore
+      .map(([ta]) => ta)
+  );
 }
 
 const ACCOUNT_LAYOUT = BufferLayout.struct([
@@ -94,4 +92,62 @@ function getOwnedAccountsFilters(publicKey: PublicKey) {
       dataSize: ACCOUNT_LAYOUT.span,
     },
   ];
+}
+
+/**
+ * Get associated token account for given mint, and instruction
+ * to generate this account
+ * @param mint
+ * @returns
+ */
+export async function getTokenAddrressAndCreateIx(
+  mint: PublicKey,
+  wallet: PublicKey
+) {
+  const tokenAddress = await Token.getAssociatedTokenAddress(
+    ASSOCIATED_TOKEN_PROGRAM_ID,
+    TOKEN_PROGRAM_ID,
+    mint,
+    wallet
+  );
+
+  const createTokenAddrIx = Token.createAssociatedTokenAccountInstruction(
+    ASSOCIATED_TOKEN_PROGRAM_ID,
+    TOKEN_PROGRAM_ID,
+    mint,
+    tokenAddress,
+    wallet,
+    wallet
+  );
+  return { tokenAddress, createTokenAddrIx };
+}
+
+/**
+ * Get account data for newly generated token account
+ * Object generated client side with balance 0 to save a network request
+ * @param tokenWallet
+ * @param mint
+ * @returns
+ */
+function getNewTokenAccountData(
+  tokenWallet: PublicKey,
+  mint: PublicKey,
+  owner: PublicKey
+): CachedToken {
+  return {
+    publicKey: tokenWallet,
+    account: {
+      address: tokenWallet,
+      mint,
+      owner,
+      amount: new BN(0),
+      delegate: null,
+      delegatedAmount: new BN(0),
+      isFrozen: false,
+      isInitialized: true,
+      isNative: false,
+      closeAuthority: null,
+      rentExemptReserve: null,
+    },
+  };
 }

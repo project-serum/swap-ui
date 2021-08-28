@@ -209,6 +209,65 @@ export function useIsWrapSol(
   };
 }
 
+// Returns true if the user can create accounts with the current context.
+export function useCanCreateAccounts(): boolean {
+  const { fromMint, toMint } = useSwapContext();
+  const { swapClient } = useDexContext();
+  const { wormholeMap, solletMap } = useTokenListContext();
+  const fromWallet = useOwnedTokenAccount(fromMint);
+  const fair = useSwapFair();
+  const route = useRouteVerbose(fromMint, toMint);
+
+  if (route === null) {
+    return false;
+  }
+
+  return (
+    // From wallet exists.
+    fromWallet !== undefined &&
+    fromWallet !== null &&
+    // Fair price is defined.
+    fair !== undefined &&
+    fair > 0 &&
+    // Mints are distinct.
+    fromMint.equals(toMint) === false &&
+    // Wallet is connected.
+    swapClient.program.provider.wallet.publicKey !== null &&
+
+    // Trade route exists.
+    route !== null &&
+    // Wormhole <-> native markets must have the wormhole token as the
+    // *from* address since they're one-sided markets.
+    (route.kind !== "wormhole-native" ||
+      wormholeMap
+        .get(fromMint.toString())
+        ?.tags?.includes(SPL_REGISTRY_WORM_TAG) !== undefined) &&
+    // Wormhole <-> sollet markets must have the sollet token as the
+    // *from* address since they're one sided markets.
+    (route.kind !== "wormhole-sollet" ||
+      solletMap
+        .get(fromMint.toString())
+        ?.tags?.includes(SPL_REGISTRY_SOLLET_TAG) !== undefined)
+  );
+}
+
+export function useCanWrapOrUnwrap(): boolean {
+  const { fromMint, fromAmount, toAmount } = useSwapContext();
+  const { swapClient } = useDexContext();
+  const fromWallet = useOwnedTokenAccount(fromMint);
+
+  return (
+    // From wallet exists.
+    fromWallet !== undefined &&
+    fromWallet !== null &&
+    // Wallet is connected.
+    swapClient.program.provider.wallet.publicKey !== null &&
+    // Trade amounts greater than zero.
+    fromAmount > 0 &&
+    toAmount > 0
+  );
+}
+
 // Returns true if the user can swap with the current context.
 export function useCanSwap(): boolean {
   const { fromMint, toMint, fromAmount, toAmount } = useSwapContext();
@@ -217,6 +276,7 @@ export function useCanSwap(): boolean {
   const fromWallet = useOwnedTokenAccount(fromMint);
   const fair = useSwapFair();
   const route = useRouteVerbose(fromMint, toMint);
+
   if (route === null) {
     return false;
   }
