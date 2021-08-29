@@ -111,6 +111,7 @@ export function SwapContextProvider(props: any) {
       _setToAmount(0);
       return;
     }
+    amount = (amount < 0) ? 0 : amount;
     _setFromAmount(amount);
     _setToAmount(FEE_MULTIPLIER * (amount / fair));
   };
@@ -121,6 +122,7 @@ export function SwapContextProvider(props: any) {
       _setToAmount(0);
       return;
     }
+    amount = (amount < 0) ? 0 : amount;
     _setToAmount(amount);
     _setFromAmount((amount * fair) / FEE_MULTIPLIER);
   };
