@@ -58,6 +58,8 @@ export default function Swap(props: SwapProps): ReactElement {
     toAmount,
     referral,
   } = props;
+
+  // @ts-ignore
   const swapClient = new SwapClient(provider, tokenList);
   const theme = createMuiTheme(
     materialTheme || {

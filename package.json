@@ -7,7 +7,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@project-serum/serum": "^0.13.34",
-    "@project-serum/swap": "^0.1.0-alpha.31",
+    "@project-serum/swap": "^0.1.0-alpha.32",
     "@solana/spl-token": "^0.1.4"
   },
   "peerDependencies": {
