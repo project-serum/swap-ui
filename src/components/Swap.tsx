@@ -214,13 +214,12 @@ export function SwapTokenForm({
     mintAccount &&
     tokenAccount.account.amount.toNumber() / 10 ** mintAccount.decimals;
 
-  const formattedAmount =
-    mintAccount && amount
-      ? amount.toLocaleString("fullwide", {
-          maximumFractionDigits: mintAccount.decimals,
-          useGrouping: false,
-        })
-      : amount;
+const decimalCount = (mintAccount && mintAccount.decimals) || 2;
+
+const formattedAmount = amount?.toLocaleString("fullwide", {
+            maximumFractionDigits: decimalCount,
+            useGrouping: false,
+          }) || "";
 
   return (
     <div className={styles.swapTokenFormContainer} style={style}>
@@ -239,11 +238,12 @@ export function SwapTokenForm({
             </span>
           ) : null}
         </Typography>
+        <span>{(formattedAmount != "NaN") ? formattedAmount : ""}</span>
       </div>
       <TextField
         type="number"
-        value={formattedAmount}
-        onChange={(e) => setAmount(parseFloat(e.target.value))}
+        value={amount}
+        onChange={(e) => setAmount(parseFloat(e.target.value)) } //ToDo: Use an arbitrary precision number class instead of Number as there's loss of precision in float values.
         InputProps={{
           disableUnderline: true,
           classes: {
@@ -512,3 +512,4 @@ function unwrapSol(
   );
   return { tx, signers: [] };
 }
+
