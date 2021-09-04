@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   PublicKey,
   Keypair,
@@ -32,6 +32,7 @@ import TokenDialog from "./TokenDialog";
 import { SettingsButton } from "./Settings";
 import { InfoLabel } from "./Info";
 import { SOL_MINT, WRAPPED_SOL_MINT } from "../utils/pubkeys";
+import { Big, BigSource } from "big.js"
 
 const useStyles = makeStyles((theme) => ({
   card: {
@@ -161,29 +162,35 @@ export function ArrowButton() {
 }
 
 function SwapFromForm({ style }: { style?: any }) {
-  const { fromMint, setFromMint, fromAmount, setFromAmount } = useSwapContext();
+  const { fromMint, setFromMint, amountfromInput, setAmountFromInput, fromAmount, setFromDecimals, setInputIsToAmount, fromDecimals } = useSwapContext();
   return (
     <SwapTokenForm
-      from
+      from={true}
       style={style}
       mint={fromMint}
       setMint={setFromMint}
-      amount={fromAmount}
-      setAmount={setFromAmount}
+      inputAmount={amountfromInput}
+      setInputAmount={setAmountFromInput}
+      amount = {fromAmount}
+      setDecimals = {setFromDecimals}
+      setInputIsToAmount= {setInputIsToAmount}
     />
   );
 }
 
 function SwapToForm({ style }: { style?: any }) {
-  const { toMint, setToMint, toAmount, setToAmount } = useSwapContext();
+  const { toMint, setToMint, amountToInput, setAmountToInput, toAmount, setToDecimals, setInputIsToAmount } = useSwapContext();
   return (
     <SwapTokenForm
       from={false}
       style={style}
       mint={toMint}
       setMint={setToMint}
+      inputAmount={amountToInput}
+      setInputAmount={setAmountToInput}
       amount={toAmount}
-      setAmount={setToAmount}
+      setDecimals= {setToDecimals}
+      setInputIsToAmount= {setInputIsToAmount}
     />
   );
 }
@@ -193,15 +200,21 @@ export function SwapTokenForm({
   style,
   mint,
   setMint,
+  inputAmount,
+  setInputAmount,
   amount,
-  setAmount,
+  setDecimals,
+  setInputIsToAmount,
 }: {
   from: boolean;
   style?: any;
   mint: PublicKey;
   setMint: (m: PublicKey) => void;
-  amount: number;
-  setAmount: (a: number) => void;
+  inputAmount: string;
+  setInputAmount: (a: string) => void;
+  amount: Big;
+  setDecimals: (n: number) => void;
+  setInputIsToAmount: (b: boolean) => void;
 }) {
   const styles = useStyles();
 
@@ -209,17 +222,15 @@ export function SwapTokenForm({
   const tokenAccount = useOwnedTokenAccount(mint);
   const mintAccount = useMint(mint);
 
+  //ToDo: Make balance a big type number
   const balance =
     tokenAccount &&
     mintAccount &&
     tokenAccount.account.amount.toNumber() / 10 ** mintAccount.decimals;
 
-const decimalCount = (mintAccount && mintAccount.decimals) || 2;
+const formattedAmount = Big(amount ?? 0).round(mintAccount && mintAccount.decimals || 2).toString() || "";
 
-const formattedAmount = amount?.toLocaleString("fullwide", {
-            maximumFractionDigits: decimalCount,
-            useGrouping: false,
-          }) || "";
+useEffect(()=> {setDecimals(mintAccount && mintAccount.decimals || 2)});
 
   return (
     <div className={styles.swapTokenFormContainer} style={style}>
@@ -232,18 +243,19 @@ const formattedAmount = amount?.toLocaleString("fullwide", {
           {from && !!balance ? (
             <span
               className={styles.maxButton}
-              onClick={() => setAmount(balance)}
+              onClick={() => setInputAmount(balance.toString())}
             >
               MAX
             </span>
           ) : null}
         </Typography>
-        <span>{(formattedAmount != "NaN") ? formattedAmount : ""}</span>
+        <span>{(!from && "~" || "")}{(formattedAmount != "NaN") ? formattedAmount : ""}</span>
       </div>
       <TextField
         type="number"
-        value={amount}
-        onChange={(e) => setAmount(parseFloat(e.target.value)) } //ToDo: Use an arbitrary precision number class instead of Number as there's loss of precision in float values.
+        value={inputAmount}
+        onFocus={() => setInputIsToAmount(!from)}
+        onChange={(e) => { setInputAmount(e.target.value);} } 
         InputProps={{
           disableUnderline: true,
           classes: {
@@ -360,7 +372,7 @@ export function SwapButton() {
       throw new Error("Quote mint not found");
     }
 
-    const amount = new BN(fromAmount * 10 ** fromMintInfo.decimals);
+    const amount = new BN(fromAmount.times(10 ** fromMintInfo.decimals).toString());
     const isSol = fromMint.equals(SOL_MINT) || toMint.equals(SOL_MINT);
     const wrappedSolAccount = isSol ? Keypair.generate() : undefined;
 

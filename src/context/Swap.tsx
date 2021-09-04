@@ -1,5 +1,5 @@
 import * as assert from "assert";
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext, useState, useEffect, useRef } from "react";
 import { useAsync } from "react-async-hook";
 import { PublicKey } from "@solana/web3.js";
 import {
@@ -20,7 +20,8 @@ import {
   SPL_REGISTRY_SOLLET_TAG,
   SPL_REGISTRY_WORM_TAG,
 } from "./TokenList";
-import { useOwnedTokenAccount } from "../context/Token";
+import { useMint, useOwnedTokenAccount } from "../context/Token";
+import { Big, BigSource } from "big.js"
 
 const DEFAULT_SLIPPAGE_PERCENT = 0.5;
 
@@ -29,17 +30,31 @@ export type SwapContext = {
   fromMint: PublicKey;
   setFromMint: (m: PublicKey) => void;
 
+  fromDecimals: number;
+  setFromDecimals: (n: number) => void;
+
+  toDecimals: number;
+  setToDecimals: (n: number) => void;
+
   // Mint being traded to. The user will receive these tokens after the swap.
   toMint: PublicKey;
   setToMint: (m: PublicKey) => void;
 
-  // Amount used for the swap.
-  fromAmount: number;
-  setFromAmount: (a: number) => void;
+  // Amount used for the swap in Big number to avoid precision errors during input.
+  fromAmount: Big;
+  // This is no longer set directly from the UI
+  // setfromAmount: (a: BigSource) => void;
 
-  // *Expected* amount received from the swap.
-  toAmount: number;
-  setToAmount: (a: number) => void;
+  // Decoupled user input amounts stored in DOM native type
+  amountfromInput: string,
+  setAmountFromInput: (a: string) => void;
+  amountToInput: string,
+  setAmountToInput: (a: string) => void;
+
+  // *Expected* amount received from the swap in Big number to avoid precision errors during input
+  toAmount: Big;
+  // This is no longer set directly from the UI
+  // setToAmount: (a: BigSource) => void;
 
   // Function to flip what we consider to be the "to" and "from" mints.
   swapToFromMints: () => void;
@@ -72,59 +87,83 @@ export type SwapContext = {
   setIsStrict: (isStrict: boolean) => void;
 
   setIsClosingNewAccounts: (b: boolean) => void;
+
+  inputIsToAmount: boolean;
+  setInputIsToAmount: (b: boolean) => void;
 };
 const _SwapContext = React.createContext<null | SwapContext>(null);
 
 export function SwapContextProvider(props: any) {
   const [fromMint, setFromMint] = useState(props.fromMint ?? SRM_MINT);
   const [toMint, setToMint] = useState(props.toMint ?? USDC_MINT);
-  const [fromAmount, _setFromAmount] = useState(props.fromAmount ?? 0);
-  const [toAmount, _setToAmount] = useState(props.toAmount ?? 0);
+  const [fromDecimals, setFromDecimals] = useState(props.fromDecimals ?? 2);
+  const [toDecimals, setToDecimals] = useState(props.toDecimals ?? 2);
+  const [fromAmount, setFromAmount] = useState(props.fromAmount ?? Big(0));
+  const [toAmount, setToAmount] = useState(props.toAmount ?? Big(0));
+  const [amountfromInput, setAmountFromInput] = useState(props.inputFromAmount ?? "0");
+  const [amountToInput, setAmountToInput] = useState(props.inputToAmount ?? "0");
   const [isClosingNewAccounts, setIsClosingNewAccounts] = useState(false);
   const [isStrict, setIsStrict] = useState(false);
   const [slippage, setSlippage] = useState(DEFAULT_SLIPPAGE_PERCENT);
   const [fairOverride, setFairOverride] = useState<number | null>(null);
-  const fair = _useSwapFair(fromMint, toMint, fairOverride);
+  let fair = _useSwapFair(fromMint, toMint, fairOverride);
   const referral = props.referral;
+  const [inputIsToAmount, setInputIsToAmount] = useState(false);
 
   assert.ok(slippage >= 0);
 
   useEffect(() => {
-    if (!fair) {
-      return;
+    if(inputIsToAmount) {
+      //This makes sure we do not play with the amount the user is inputting, but the other input.
+      setFromAmountByTo();
+    } else {
+      setToAmountByFrom();
     }
-    setFromAmount(fromAmount);
-  }, [fair]);
+    if(toAmount.lt(0) || fromAmount.lt(0)) {
+      setFromAmount(Big(0));
+      setToAmount(Big(0));
+      setAmountFromInput("0");
+      setAmountToInput("0");
+    }
+  }, [fair, amountToInput, amountfromInput, toMint, fromMint, fromDecimals, toDecimals]);
+
+  const setFromAmountByTo = () => {
+    if (fair) {
+      const newAmount = (Big(amountToInput || 0));
+      setToAmount(newAmount);
+      const newFromAmount = (newAmount.times(fair).div(FEE_MULTIPLIER)).round(fromDecimals);
+      setFromAmount(newFromAmount);
+      setAmountFromInput(newFromAmount.toString());
+    }
+  }
+
+  const setToAmountByFrom = () => {
+    if (fair) {
+      const newAmount = (Big(amountfromInput || 0));
+      setFromAmount(newAmount);
+      const newToAmount = (Big(FEE_MULTIPLIER).times(newAmount.div(fair))).round(toDecimals);
+      setToAmount(newToAmount);
+      setAmountToInput(newToAmount.toString());
+    }
+  }
+
 
   const swapToFromMints = () => {
     const oldFrom = fromMint;
     const oldTo = toMint;
+    const oldFromAmount = fromAmount;
     const oldToAmount = toAmount;
-    _setFromAmount(oldToAmount);
+    const oldToDecimals = toDecimals;
+    const oldFromDecimals = fromDecimals;
+    
     setFromMint(oldTo);
     setToMint(oldFrom);
-  };
-
-  const setFromAmount = (amount: number) => {
-    if (fair === undefined) {
-      _setFromAmount(0);
-      _setToAmount(0);
-      return;
-    }
-    amount = (amount < 0) ? 0 : amount;
-    _setFromAmount(amount);
-    _setToAmount(FEE_MULTIPLIER * (amount / fair));
-  };
-
-  const setToAmount = (amount: number) => {
-    if (fair === undefined) {
-      _setFromAmount(0);
-      _setToAmount(0);
-      return;
-    }
-    amount = (amount < 0) ? 0 : amount;
-    _setToAmount(amount);
-    _setFromAmount((amount * fair) / FEE_MULTIPLIER);
+    setToDecimals(oldFromDecimals);
+    setFromDecimals(oldToDecimals);
+    setFromAmount(oldToAmount);
+    setToAmount(oldFromAmount);
+    setAmountFromInput(oldToAmount.toString());
+    setAmountToInput(oldFromAmount.toString());
   };
 
   return (
@@ -134,10 +173,12 @@ export function SwapContextProvider(props: any) {
         setFromMint,
         toMint,
         setToMint,
+        fromDecimals,
+        setFromDecimals,
+        toDecimals,
+        setToDecimals,
         fromAmount,
-        setFromAmount,
         toAmount,
-        setToAmount,
         swapToFromMints,
         slippage,
         setSlippage,
@@ -148,6 +189,12 @@ export function SwapContextProvider(props: any) {
         setIsStrict,
         setIsClosingNewAccounts,
         referral,
+        amountfromInput,
+        amountToInput,
+        setAmountFromInput,
+        setAmountToInput,
+        inputIsToAmount,
+        setInputIsToAmount
       }}
     >
       {props.children}
@@ -202,8 +249,8 @@ export function useCanSwap(): boolean {
     // Wallet is connected.
     swapClient.program.provider.wallet.publicKey !== null &&
     // Trade amounts greater than zero.
-    fromAmount > 0 &&
-    toAmount > 0 &&
+    fromAmount.gt(0) &&
+    toAmount.gt(0) &&
     // Trade route exists.
     route !== null &&
     // Wormhole <-> native markets must have the wormhole token as the
