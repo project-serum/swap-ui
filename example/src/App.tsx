@@ -11,6 +11,7 @@ import {
   Connection,
   Transaction,
   TransactionSignature,
+  PublicKey,
 } from "@solana/web3.js";
 import {
   TokenListContainer,
@@ -118,6 +119,13 @@ function AppInner() {
   );
 }
 
+// Cast wallet to AnchorWallet in order to be compatible with Anchor's Provider class
+interface AnchorWallet {
+  signTransaction(tx: Transaction): Promise<Transaction>;
+  signAllTransactions(txs: Transaction[]): Promise<Transaction[]>;
+  publicKey: PublicKey;
+}
+
 // Custom provider to display notifications whenever a transaction is sent.
 //
 // Note that this is an Anchor wallet/network provider--not a React provider,
@@ -137,7 +145,8 @@ class NotifyingProvider extends Provider {
     opts: ConfirmOptions,
     onTransaction: (tx: TransactionSignature | undefined, err?: Error) => void
   ) {
-    super(connection, wallet, opts);
+    const newWallet = wallet as AnchorWallet;
+    super(connection, newWallet, opts);
     this.onTransaction = onTransaction;
   }
 
@@ -151,7 +160,9 @@ class NotifyingProvider extends Provider {
       this.onTransaction(txSig);
       return txSig;
     } catch (err) {
-      this.onTransaction(undefined, err);
+      if (err instanceof Error || err === undefined) {
+        this.onTransaction(undefined, err);
+      }
       return "";
     }
   }
@@ -167,7 +178,9 @@ class NotifyingProvider extends Provider {
       });
       return txSigs;
     } catch (err) {
-      this.onTransaction(undefined, err);
+      if (err instanceof Error || err === undefined) {
+        this.onTransaction(undefined, err);
+      }
       return [];
     }
   }
