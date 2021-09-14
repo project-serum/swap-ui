@@ -19,6 +19,11 @@ import {
 } from "@solana/spl-token-registry";
 import Swap from "@project-serum/swap-ui";
 import "./App.css";
+import { opts } from "./constants";
+import { WalletProvider } from "./contexts/WalletContext";
+import useWallet from "./hooks/useWallet";
+import WalletModal from "./Modals/wallet";
+
 
 // App illustrating the use of the Swap component.
 //
@@ -27,7 +32,9 @@ import "./App.css";
 function App() {
   return (
     <SnackbarProvider maxSnack={5} autoHideDuration={8000}>
-      <AppInner />
+      <WalletProvider>
+        <SnackbarApp/>
+      </WalletProvider>
     </SnackbarProvider>
   );
 }
@@ -40,27 +47,23 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-function AppInner() {
+function SnackbarApp() {
   const styles = useStyles();
-  const { enqueueSnackbar } = useSnackbar();
   const [isConnected, setIsConnected] = useState(false);
+  const [walletModal, setWalletModal] = useState(false);
+  const { enqueueSnackbar } = useSnackbar();
   const [tokenList, setTokenList] = useState<TokenListContainer | null>(null);
 
-  const [provider, wallet] = useMemo(() => {
-    const opts: ConfirmOptions = {
-      preflightCommitment: "recent",
-      commitment: "recent",
-    };
-    const network = "https://solana-api.projectserum.com";
-    const wallet = new Wallet("https://www.sollet.io", network);
-    const connection = new Connection(network, opts.preflightCommitment);
+  const { wallet, connection } = useWallet();
+
+  const provider = useMemo(() => {
     const provider = new NotifyingProvider(
       connection,
-      wallet,
+      wallet as any,
       opts,
       (tx, err) => {
         if (err) {
-          enqueueSnackbar(`Error: ${err.toString()}`, {
+          enqueueSnackbar(err.toString(), {
             variant: "error",
           });
         } else {
@@ -68,11 +71,11 @@ function AppInner() {
             variant: "success",
             action: (
               <Button
-                color="inherit"
-                component="a"
-                target="_blank"
-                rel="noopener"
-                href={`https://explorer.solana.com/tx/${tx}`}
+                color='inherit'
+                component='a'
+                target='_blank'
+                rel='noopener'
+                href={`https://solscan.io/tx/${tx}`}
               >
                 View on Solana Explorer
               </Button>
@@ -81,8 +84,8 @@ function AppInner() {
         }
       }
     );
-    return [provider, wallet];
-  }, [enqueueSnackbar]);
+    return provider;
+  }, [wallet, connection, enqueueSnackbar]);
 
   useEffect(() => {
     new TokenListProvider().resolve().then(setTokenList);
@@ -107,9 +110,11 @@ function AppInner() {
       alignItems="center"
       className={styles.root}
     >
+      <WalletModal open={walletModal} setter={setWalletModal} />
       <Button
-        variant="outlined"
-        onClick={() => (!isConnected ? wallet.connect() : wallet.disconnect())}
+        color='inherit'
+        variant='outlined'
+        onClick={() => (!isConnected ? setWalletModal(true): wallet.disconnect())}
         style={{ position: "fixed", right: 24, top: 24 }}
       >
         {!isConnected ? "Connect" : "Disconnect"}
