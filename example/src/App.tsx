@@ -20,15 +20,43 @@ import {
 import Swap from "@project-serum/swap-ui";
 import "./App.css";
 
+import { ConnectionProvider, WalletProvider, useWallet, useConnection } from '@solana/wallet-adapter-react';
+import {
+  getPhantomWallet,
+  getSolletWallet,
+} from '@solana/wallet-adapter-wallets';
+import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
+import {
+  WalletDialogProvider as MaterialUIWalletDialogProvider,
+  WalletMultiButton as MaterialUIWalletMultiButton,
+} from '@solana/wallet-adapter-material-ui';
+
 // App illustrating the use of the Swap component.
 //
 // One needs to just provide an Anchor `Provider` and a `TokenListContainer`
 // to the `Swap` component, and then everything else is taken care of.
 function App() {
+
+  const network = "https://solana-api.projectserum.com";
+
+  const wallets = useMemo(
+    () => [
+      getPhantomWallet(),
+      getSolletWallet({ network: "htpps://api.devnet.solana.com" as WalletAdapterNetwork }),
+    ],
+    []
+  );
+
   return (
-    <SnackbarProvider maxSnack={5} autoHideDuration={8000}>
-      <AppInner />
-    </SnackbarProvider>
+    <ConnectionProvider endpoint={network}>
+      <WalletProvider wallets={wallets} >
+        <MaterialUIWalletDialogProvider style={{backgroundColor: 'white', color: 'red'}}>
+          <SnackbarProvider maxSnack={5} autoHideDuration={8000}>
+            <AppInner />
+          </SnackbarProvider>
+        </MaterialUIWalletDialogProvider>
+      </WalletProvider>
+    </ConnectionProvider>
   );
 }
 
@@ -45,6 +73,13 @@ function AppInner() {
   const { enqueueSnackbar } = useSnackbar();
   const [isConnected, setIsConnected] = useState(false);
   const [tokenList, setTokenList] = useState<TokenListContainer | null>(null);
+
+  const opts: ConfirmOptions = {
+    preflightCommitment: "recent"
+  }
+  const newWallet = useWallet();
+  const { connection: newConnection } = useConnection();
+  const newProvider = new Provider(newConnection, newWallet as AnchorWallet, opts);
 
   const [provider, wallet] = useMemo(() => {
     const opts: ConfirmOptions = {
@@ -103,7 +138,7 @@ function AppInner() {
   return (
     <Grid
       container
-      justify="center"
+      justifyContent="center"
       alignItems="center"
       className={styles.root}
     >
@@ -114,7 +149,8 @@ function AppInner() {
       >
         {!isConnected ? "Connect" : "Disconnect"}
       </Button>
-      {tokenList && <Swap provider={provider} tokenList={tokenList} />}
+      <MaterialUIWalletMultiButton  style={{ position: "fixed", left: 24, top: 24 }}/>
+      {tokenList && <Swap provider={newProvider} tokenList={tokenList} />}
     </Grid>
   );
 }
