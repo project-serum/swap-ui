@@ -19,23 +19,52 @@ import {
 } from "@solana/spl-token-registry";
 import Swap from "@project-serum/swap-ui";
 import "./App.css";
-import { opts } from "./constants";
-import { WalletProvider } from "./contexts/WalletContext";
-import useWallet from "./hooks/useWallet";
-import WalletModal from "./Modals/wallet";
-
+// Solana wallet adapter
+import { ConnectionProvider, WalletProvider, useWallet, useConnection } from '@solana/wallet-adapter-react';
+import {
+  getPhantomWallet,
+  getSolletWallet,
+  getLedgerWallet,
+  getSlopeWallet,
+  getSolflareWallet,
+  getSolletExtensionWallet,
+} from '@solana/wallet-adapter-wallets';
+import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
+import {
+  WalletDialogProvider as MaterialUIWalletDialogProvider,
+  WalletMultiButton as MaterialUIWalletMultiButton,
+} from '@solana/wallet-adapter-material-ui';
 
 // App illustrating the use of the Swap component.
 //
 // One needs to just provide an Anchor `Provider` and a `TokenListContainer`
 // to the `Swap` component, and then everything else is taken care of.
 function App() {
+  // Network
+  const network = "https://solana-api.projectserum.com";
+  // Wallets
+  const wallets = useMemo(
+    () => [
+      getPhantomWallet(),
+      getSlopeWallet(),
+      getSolflareWallet(),
+      getSolletExtensionWallet(),
+      getLedgerWallet(),
+      getSolletWallet({ network: "htpps://api.devnet.solana.com" as WalletAdapterNetwork }),
+    ],
+    []
+  );
+
   return (
-    <SnackbarProvider maxSnack={5} autoHideDuration={8000}>
-      <WalletProvider>
-        <SnackbarApp/>
+    <ConnectionProvider endpoint={network}>
+      <WalletProvider wallets={wallets} >
+        <MaterialUIWalletDialogProvider style={{backgroundColor: 'white', color: 'red'}}>
+          <SnackbarProvider maxSnack={5} autoHideDuration={8000}>
+            <AppInner />
+          </SnackbarProvider>
+        </MaterialUIWalletDialogProvider>
       </WalletProvider>
-    </SnackbarProvider>
+    </ConnectionProvider>
   );
 }
 
@@ -47,23 +76,34 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-function SnackbarApp() {
+function AppInner() {
   const styles = useStyles();
-  const [isConnected, setIsConnected] = useState(false);
-  const [walletModal, setWalletModal] = useState(false);
   const { enqueueSnackbar } = useSnackbar();
+  const [isConnected, setIsConnected] = useState(false);
   const [tokenList, setTokenList] = useState<TokenListContainer | null>(null);
 
-  const { wallet, connection } = useWallet();
+  const opts: ConfirmOptions = {
+    preflightCommitment: "recent"
+  }
+  const newWallet = useWallet();
+  const { connection: newConnection } = useConnection();
+  const newProvider = new Provider(newConnection, newWallet as AnchorWallet, opts);
 
-  const provider = useMemo(() => {
+  const [provider, wallet] = useMemo(() => {
+    const opts: ConfirmOptions = {
+      preflightCommitment: "recent",
+      commitment: "recent",
+    };
+    const network = "https://solana-api.projectserum.com";
+    const wallet = new Wallet("https://www.sollet.io", network);
+    const connection = new Connection(network, opts.preflightCommitment);
     const provider = new NotifyingProvider(
       connection,
-      wallet as any,
+      wallet,
       opts,
       (tx, err) => {
         if (err) {
-          enqueueSnackbar(err.toString(), {
+          enqueueSnackbar(`Error: ${err.toString()}`, {
             variant: "error",
           });
         } else {
@@ -71,11 +111,11 @@ function SnackbarApp() {
             variant: "success",
             action: (
               <Button
-                color='inherit'
-                component='a'
-                target='_blank'
-                rel='noopener'
-                href={`https://solscan.io/tx/${tx}`}
+                color="inherit"
+                component="a"
+                target="_blank"
+                rel="noopener"
+                href={`https://explorer.solana.com/tx/${tx}`}
               >
                 View on Solana Explorer
               </Button>
@@ -84,8 +124,8 @@ function SnackbarApp() {
         }
       }
     );
-    return provider;
-  }, [wallet, connection, enqueueSnackbar]);
+    return [provider, wallet];
+  }, [enqueueSnackbar]);
 
   useEffect(() => {
     new TokenListProvider().resolve().then(setTokenList);
@@ -106,20 +146,21 @@ function SnackbarApp() {
   return (
     <Grid
       container
-      justify="center"
+      justifyContent="center"
       alignItems="center"
       className={styles.root}
     >
-      <WalletModal open={walletModal} setter={setWalletModal} />
+      {/* Old wallet connect button
       <Button
-        color='inherit'
-        variant='outlined'
-        onClick={() => (!isConnected ? setWalletModal(true): wallet.disconnect())}
+        variant="outlined"
+        onClick={() => (!isConnected ? wallet.connect() : wallet.disconnect())}
         style={{ position: "fixed", right: 24, top: 24 }}
       >
         {!isConnected ? "Connect" : "Disconnect"}
       </Button>
-      {tokenList && <Swap provider={provider} tokenList={tokenList} />}
+      */}
+      <MaterialUIWalletMultiButton  style={{ position: "fixed", left: 24, top: 24 }}/>
+      {tokenList && <Swap provider={newProvider} tokenList={tokenList} />}
     </Grid>
   );
 }
