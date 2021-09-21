@@ -1,13 +1,36 @@
 {
-  "name": "@project-serum/swap-ui-example",
-  "version": "0.1.1",
-  "homepage": ".",
+  "name": "gokuwallet",
+  "version": "0.1.0",
   "private": true,
+  "dependencies": {
+    "@material-ui/core": "^4.12.3",
+    "@gokiprotocol/walletkit": "^1.0.1",
+    "@project-serum/anchor": "^0.7.0",
+    "@project-serum/swap-ui": "^0.2.2",
+    "@saberhq/solana-contrib": "^1.2.3",
+    "@saberhq/token-utils": "^1.2.3",
+    "@saberhq/use-solana": "^0.14.3",
+    "@solana/spl-token-registry": "^0.2.247",
+    "@testing-library/jest-dom": "^5.14.1",
+    "@testing-library/react": "^11.2.7",
+    "@testing-library/user-event": "^12.8.3",
+    "@types/jest": "^26.0.24",
+    "@types/node": "^12.20.25",
+    "@types/react": "^17.0.22",
+    "@types/react-dom": "^17.0.9",
+    "notistack": "^1.0.10",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "react-scripts": "4.0.3",
+    "typescript": "^4.4.3",
+    "web-vitals": "^1.1.2"
+  },
   "scripts": {
-    "start": "../node_modules/.bin/react-app-rewired start",
-    "build": "../node_modules/.bin/react-app-rewired build",
-    "deploy": "gh-pages -d build/",
-    "build:npm": "rm -rf dist && tsc --build tsconfig.npm.json"
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "lint:fix": "prettier src/** -w"
   },
   "eslintConfig": {
     "extends": [
@@ -26,5 +49,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "prettier": "^2.4.1"
   }
 }
