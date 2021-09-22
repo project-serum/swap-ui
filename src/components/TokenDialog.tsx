@@ -11,6 +11,8 @@ import {
   List,
   ListItem,
   Typography,
+  Chip,
+  Avatar,
   Tabs,
   Tab,
 } from "@material-ui/core";
@@ -52,8 +54,12 @@ export default function TokenDialog({
   const [tokenFilter, setTokenFilter] = useState("");
   const filter = tokenFilter.toLowerCase();
   const styles = useStyles();
-  const { swappableTokens, swappableTokensSollet, swappableTokensWormhole } =
-    useSwappableTokens();
+  const {
+    swappableTokens,
+    swappableTokensSollet,
+    swappableTokensWormhole,
+    commonTokenBases,
+  } = useSwappableTokens();
   const displayTabs = !useMediaQuery("(max-width:450px)");
   const selectedTokens =
     tabSelection === 0
@@ -97,6 +103,13 @@ export default function TokenDialog({
       </DialogTitle>
       <DialogContent className={styles.dialogContent} dividers={true}>
         <List disablePadding>
+          <CommonBases
+            commonTokenBases={commonTokenBases}
+            onClick={(mint) => {
+              setMint(mint);
+              onClose();
+            }}
+          />
           {tokens.map((tokenInfo: TokenInfo) => (
             <TokenListItem
               key={tokenInfo.address}
@@ -172,6 +185,33 @@ function TokenName({ tokenInfo }: { tokenInfo: TokenInfo }) {
       <Typography color="textSecondary" style={{ fontSize: "14px" }}>
         {tokenInfo?.name}
       </Typography>
+    </div>
+  );
+}
+
+function CommonBases({
+  commonTokenBases,
+  onClick,
+}: {
+  commonTokenBases: TokenInfo[];
+  onClick: (mint: PublicKey) => void;
+}) {
+  return (
+    <div style={{ padding: "0 20px 20px 20px" }}>
+      <h4>Common bases</h4>
+      {commonTokenBases?.map((tokenInfo: TokenInfo) => {
+        const mint = new PublicKey(tokenInfo.address);
+        return (
+          <Chip
+            key={tokenInfo.address}
+            avatar={<Avatar alt={tokenInfo?.name} src={tokenInfo?.logoURI} />}
+            variant="outlined"
+            label={tokenInfo?.symbol}
+            onClick={() => onClick(mint)}
+            style={{ margin: "5px" }}
+          />
+        );
+      })}
     </div>
   );
 }

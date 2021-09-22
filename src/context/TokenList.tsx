@@ -1,6 +1,7 @@
 import React, { useContext, useMemo } from "react";
 import { TokenInfo } from "@solana/spl-token-registry";
 import { SOL_MINT } from "../utils/pubkeys";
+import { PublicKey } from "@solana/web3.js";
 
 type TokenListContext = {
   tokenMap: Map<string, TokenInfo>;
@@ -9,6 +10,7 @@ type TokenListContext = {
   swappableTokens: TokenInfo[];
   swappableTokensSollet: TokenInfo[];
   swappableTokensWormhole: TokenInfo[];
+  commonTokenBases: TokenInfo[];
 };
 const _TokenListContext = React.createContext<null | TokenListContext>(null);
 
@@ -97,6 +99,13 @@ export function TokenListContextProvider(props: any) {
     ];
   }, [tokenList]);
 
+  // Common token bases
+  const commonTokenBases = useMemo(() => {
+    const cb = props.commonBases?.map((add: PublicKey) => {
+      return tokenMap.get(add.toString());
+    });
+    return cb;
+  }, [tokenList]);
   return (
     <_TokenListContext.Provider
       value={{
@@ -106,6 +115,7 @@ export function TokenListContextProvider(props: any) {
         swappableTokens,
         swappableTokensWormhole,
         swappableTokensSollet,
+        commonTokenBases,
       }}
     >
       {props.children}
@@ -127,7 +137,16 @@ export function useTokenMap(): Map<string, TokenInfo> {
 }
 
 export function useSwappableTokens() {
-  const { swappableTokens, swappableTokensWormhole, swappableTokensSollet } =
-    useTokenListContext();
-  return { swappableTokens, swappableTokensWormhole, swappableTokensSollet };
+  const {
+    swappableTokens,
+    swappableTokensWormhole,
+    swappableTokensSollet,
+    commonTokenBases,
+  } = useTokenListContext();
+  return {
+    swappableTokens,
+    swappableTokensWormhole,
+    swappableTokensSollet,
+    commonTokenBases,
+  };
 }

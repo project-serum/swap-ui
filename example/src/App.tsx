@@ -46,6 +46,13 @@ function AppInner() {
   const [isConnected, setIsConnected] = useState(false);
   const [tokenList, setTokenList] = useState<TokenListContainer | null>(null);
 
+  let commonBases: PublicKey[] = [
+    new PublicKey("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"),
+    new PublicKey("Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"),
+    new PublicKey("So11111111111111111111111111111111111111112"),
+    new PublicKey("SRMuApVNdxXokk5GT7XD5cUUgXMBCoAz2LHeuAoKWRt"),
+  ];
+
   const [provider, wallet] = useMemo(() => {
     const opts: ConfirmOptions = {
       preflightCommitment: "recent",
@@ -103,7 +110,7 @@ function AppInner() {
   return (
     <Grid
       container
-      justify="center"
+      justifyContent="center"
       alignItems="center"
       className={styles.root}
     >
@@ -114,7 +121,13 @@ function AppInner() {
       >
         {!isConnected ? "Connect" : "Disconnect"}
       </Button>
-      {tokenList && <Swap provider={provider} tokenList={tokenList} />}
+      {tokenList && (
+        <Swap
+          provider={provider}
+          tokenList={tokenList}
+          commonBases={commonBases}
+        />
+      )}
     </Grid>
   );
 }

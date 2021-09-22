@@ -4,7 +4,7 @@ import { TokenListContainer } from "@solana/spl-token-registry";
 import { Provider } from "@project-serum/anchor";
 import { Swap as SwapClient } from "@project-serum/swap";
 import {
-  createMuiTheme,
+  createTheme,
   ThemeOptions,
   ThemeProvider,
 } from "@material-ui/core/styles";
@@ -52,6 +52,7 @@ export default function Swap(props: SwapProps): ReactElement {
     materialTheme,
     provider,
     tokenList,
+    commonBases,
     fromMint,
     toMint,
     fromAmount,
@@ -61,7 +62,7 @@ export default function Swap(props: SwapProps): ReactElement {
 
   // @ts-ignore
   const swapClient = new SwapClient(provider, tokenList);
-  const theme = createMuiTheme(
+  const theme = createTheme(
     materialTheme || {
       palette: {
         primary: {
@@ -80,7 +81,7 @@ export default function Swap(props: SwapProps): ReactElement {
   );
   return (
     <ThemeProvider theme={theme}>
-      <TokenListContextProvider tokenList={tokenList}>
+      <TokenListContextProvider tokenList={tokenList} commonBases={commonBases}>
         <TokenContextProvider provider={provider}>
           <DexContextProvider swapClient={swapClient}>
             <SwapContextProvider
@@ -117,6 +118,11 @@ export type SwapProps = {
    * Token list providing information for tokens used.
    */
   tokenList: TokenListContainer;
+
+  /**
+   * List of token address that should show up as common base tokens
+   */
+  commonBases?: PublicKey[];
 
   /**
    * Wallet address to which referral fees are sent (i.e. a SOL address).
