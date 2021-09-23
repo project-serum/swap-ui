@@ -1,7 +1,12 @@
-import React, { useContext, useMemo } from "react";
+import React, { useContext, useMemo, useState, useEffect } from "react";
 import { TokenInfo } from "@solana/spl-token-registry";
 import { SOL_MINT } from "../utils/pubkeys";
 import { PublicKey } from "@solana/web3.js";
+import { LocalStorage } from "../utils/localStorage";
+
+interface TokenCommonBaseInfo extends TokenInfo {
+  isCommonBase: boolean;
+}
 
 type TokenListContext = {
   tokenMap: Map<string, TokenInfo>;
@@ -10,7 +15,10 @@ type TokenListContext = {
   swappableTokens: TokenInfo[];
   swappableTokensSollet: TokenInfo[];
   swappableTokensWormhole: TokenInfo[];
-  commonTokenBases: TokenInfo[];
+  tokenBase: TokenInfo[] | undefined;
+  addNewBase: (token: TokenInfo) => void;
+  removeBase: (token: TokenInfo) => void;
+  tokenBaseMap: Map<string, TokenCommonBaseInfo>;
 };
 const _TokenListContext = React.createContext<null | TokenListContext>(null);
 
@@ -99,13 +107,65 @@ export function TokenListContextProvider(props: any) {
     ];
   }, [tokenList]);
 
+  let [tokenBase, setTokenBase] = useState<TokenCommonBaseInfo[] | undefined>(
+    undefined
+  );
+  let [addrList, setValues, removeValue] = LocalStorage("swapui-common-bases");
+
   // Common token bases
-  const commonTokenBases = useMemo(() => {
-    const cb = props.commonBases?.map((add: PublicKey) => {
-      return tokenMap.get(add.toString());
+  useEffect(() => {
+    if (addrList == null) {
+      addrList = props.commonBases ?? [];
+    }
+    if (props.commonBases) {
+      props.commonBases.forEach((add: any) => setValues(add.toString()));
+      addrList.concat(props.commonBases);
+    }
+    addrList = addrList.map((e: string) => new PublicKey(e.toString()));
+    const cb = addrList?.map((add: PublicKey) => {
+      const token = tokenMap.get(add.toString());
+      token.isCommonBase = true;
+      setValues(token.address);
+      return token;
     });
+    setTokenBase(cb);
     return cb;
-  }, [tokenList]);
+  }, [props.commonBases]);
+
+  const addNewBase = (token: TokenInfo) => {
+    // Check if token already a common base
+    if (
+      tokenBase?.some((t) => token.address.toString() === t.address.toString())
+    ) {
+      return;
+    }
+    const c: TokenCommonBaseInfo = { ...token, isCommonBase: true };
+    setValues(token.address);
+    setTokenBase((prevState) => [...(prevState as TokenCommonBaseInfo[]), c]);
+  };
+
+  const removeBase = (token: TokenInfo) => {
+    const index =
+      tokenBase?.findIndex(
+        (t) => token.address.toString() === t.address.toString()
+      ) ?? -1;
+    // return if not found
+    if (index == -1) return;
+    const tempTokenBase = tokenBase?.slice();
+    tempTokenBase?.splice(index, 1);
+    setTokenBase(tempTokenBase);
+    removeValue(index);
+  };
+
+  // Token map for quick lookup.
+  const tokenBaseMap = useMemo(() => {
+    const tokenBaseMap = new Map();
+    tokenBase?.forEach((t: TokenCommonBaseInfo) => {
+      tokenBaseMap.set(t.address, t);
+    });
+    return tokenBaseMap;
+  }, [tokenBase]);
+
   return (
     <_TokenListContext.Provider
       value={{
@@ -115,7 +175,10 @@ export function TokenListContextProvider(props: any) {
         swappableTokens,
         swappableTokensWormhole,
         swappableTokensSollet,
-        commonTokenBases,
+        tokenBase,
+        addNewBase,
+        removeBase,
+        tokenBaseMap,
       }}
     >
       {props.children}
@@ -137,16 +200,22 @@ export function useTokenMap(): Map<string, TokenInfo> {
 }
 
 export function useSwappableTokens() {
-  const {
-    swappableTokens,
-    swappableTokensWormhole,
-    swappableTokensSollet,
-    commonTokenBases,
-  } = useTokenListContext();
+  const { swappableTokens, swappableTokensWormhole, swappableTokensSollet } =
+    useTokenListContext();
   return {
     swappableTokens,
     swappableTokensWormhole,
     swappableTokensSollet,
-    commonTokenBases,
+  };
+}
+
+export function useTokenBase() {
+  const { tokenBase, addNewBase, tokenBaseMap, removeBase } =
+    useTokenListContext();
+  return {
+    tokenBase,
+    addNewBase,
+    tokenBaseMap,
+    removeBase,
   };
 }

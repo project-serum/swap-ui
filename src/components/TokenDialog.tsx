@@ -10,14 +10,16 @@ import {
   TextField,
   List,
   ListItem,
+  ListSubheader,
   Typography,
   Chip,
   Avatar,
   Tabs,
   Tab,
 } from "@material-ui/core";
+import { StarOutline, Star } from "@material-ui/icons";
 import { TokenIcon } from "./Swap";
-import { useSwappableTokens } from "../context/TokenList";
+import { useSwappableTokens, useTokenBase } from "../context/TokenList";
 import { useMediaQuery } from "@material-ui/core";
 
 const useStyles = makeStyles((theme) => ({
@@ -54,12 +56,9 @@ export default function TokenDialog({
   const [tokenFilter, setTokenFilter] = useState("");
   const filter = tokenFilter.toLowerCase();
   const styles = useStyles();
-  const {
-    swappableTokens,
-    swappableTokensSollet,
-    swappableTokensWormhole,
-    commonTokenBases,
-  } = useSwappableTokens();
+  const { swappableTokens, swappableTokensSollet, swappableTokensWormhole } =
+    useSwappableTokens();
+  const { tokenBase, addNewBase, tokenBaseMap, removeBase } = useTokenBase();
   const displayTabs = !useMediaQuery("(max-width:450px)");
   const selectedTokens =
     tabSelection === 0
@@ -103,13 +102,17 @@ export default function TokenDialog({
       </DialogTitle>
       <DialogContent className={styles.dialogContent} dividers={true}>
         <List disablePadding>
-          <CommonBases
-            commonTokenBases={commonTokenBases}
-            onClick={(mint) => {
-              setMint(mint);
-              onClose();
-            }}
-          />
+          {tokenBase?.length != 0 && (
+            <ListSubheader style={{ backgroundColor: "white" }}>
+              <CommonBases
+                commonTokenBases={tokenBase}
+                onClick={(mint) => {
+                  setMint(mint);
+                  onClose();
+                }}
+              />
+            </ListSubheader>
+          )}
           {tokens.map((tokenInfo: TokenInfo) => (
             <TokenListItem
               key={tokenInfo.address}
@@ -117,6 +120,15 @@ export default function TokenDialog({
               onClick={(mint) => {
                 setMint(mint);
                 onClose();
+              }}
+              addNewBase={(token) => {
+                addNewBase(token);
+              }}
+              isCommonBase={
+                tokenBaseMap.get(tokenInfo.address.toString()) ? true : false
+              }
+              removeBase={(token) => {
+                removeBase(token);
               }}
             />
           ))}
@@ -159,19 +171,41 @@ export default function TokenDialog({
 function TokenListItem({
   tokenInfo,
   onClick,
+  addNewBase,
+  removeBase,
+  isCommonBase,
 }: {
   tokenInfo: TokenInfo;
   onClick: (mint: PublicKey) => void;
+  addNewBase: (token: TokenInfo) => void;
+  removeBase: (token: TokenInfo) => void;
+  isCommonBase: Boolean;
 }) {
   const mint = new PublicKey(tokenInfo.address);
   return (
-    <ListItem
-      button
-      onClick={() => onClick(mint)}
-      style={{ padding: "10px 20px" }}
-    >
-      <TokenIcon mint={mint} style={{ width: "30px", borderRadius: "15px" }} />
-      <TokenName tokenInfo={tokenInfo} />
+    <ListItem>
+      <div
+        onClick={() => onClick(mint)}
+        style={{
+          padding: "10px 20px",
+          display: "flex",
+          cursor: "pointer",
+          width: "100%",
+        }}
+      >
+        <TokenIcon
+          mint={mint}
+          style={{ width: "30px", borderRadius: "15px" }}
+        />
+        <TokenName tokenInfo={tokenInfo} />
+      </div>
+      <Chip
+        variant="outlined"
+        label={isCommonBase ? <Star /> : <StarOutline />}
+        onClick={() =>
+          isCommonBase ? removeBase(tokenInfo) : addNewBase(tokenInfo)
+        }
+      />
     </ListItem>
   );
 }
@@ -193,12 +227,12 @@ function CommonBases({
   commonTokenBases,
   onClick,
 }: {
-  commonTokenBases: TokenInfo[];
+  commonTokenBases: TokenInfo[] | undefined;
   onClick: (mint: PublicKey) => void;
 }) {
   return (
-    <div style={{ padding: "0 20px 20px 20px" }}>
-      <h4>Common bases</h4>
+    <div style={{ padding: "0 20px 20px 20px", position: "sticky" }}>
+      <h4 style={{ margin: 0 }}>Common bases</h4>
       {commonTokenBases?.map((tokenInfo: TokenInfo) => {
         const mint = new PublicKey(tokenInfo.address);
         return (
@@ -208,7 +242,7 @@ function CommonBases({
             variant="outlined"
             label={tokenInfo?.symbol}
             onClick={() => onClick(mint)}
-            style={{ margin: "5px" }}
+            style={{ margin: "0 1px" }}
           />
         );
       })}

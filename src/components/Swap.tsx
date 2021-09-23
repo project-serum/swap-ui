@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   PublicKey,
   Keypair,
@@ -222,6 +222,16 @@ export function SwapTokenForm({
         })
       : amount;
 
+  const tokenDialog = useMemo(() => {
+    return (
+      <TokenDialog
+        setMint={setMint}
+        open={showTokenDialog}
+        onClose={() => setShowTokenDialog(false)}
+      />
+    );
+  }, [showTokenDialog]);
+
   return (
     <div className={styles.swapTokenFormContainer} style={style}>
       <div className={styles.swapTokenSelectorContainer}>
@@ -252,11 +262,7 @@ export function SwapTokenForm({
           },
         }}
       />
-      <TokenDialog
-        setMint={setMint}
-        open={showTokenDialog}
-        onClose={() => setShowTokenDialog(false)}
-      />
+      {tokenDialog}
     </div>
   );
 }
