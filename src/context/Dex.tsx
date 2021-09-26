@@ -26,6 +26,7 @@ import {
 import { useTokenMap, useTokenListContext } from "./TokenList";
 import { fetchSolletInfo, requestWormholeSwapMarketIfNeeded } from "./Sollet";
 import { setMintCache } from "./Token";
+import { useSwapContext } from "./Swap";
 
 const BASE_TAKER_FEE_BPS = 0.0022;
 export const FEE_MULTIPLIER = 1 - BASE_TAKER_FEE_BPS;
@@ -350,6 +351,35 @@ export function useMarketName(market: PublicKey): string | null {
   return name;
 }
 
+// TODO handle edge case of insufficient liquidity
+export function usePriceImpact(market?: PublicKey): number | undefined {
+  const { toAmount, toMint } = useSwapContext();
+  const orderbook = useOrderbook(market);
+  if (orderbook === undefined) {
+    return undefined;
+  }
+  const orders = toMint.equals(orderbook.bids.market.baseMintAddress)
+    ? orderbook.asks.items(false)
+    : orderbook.bids.items(true);
+
+  let remainingAmount = toAmount;
+  let order = orders.next();
+  const initialPrice = order.value.price;
+  let priceAfterOrder = initialPrice;
+
+  while (!order.done && remainingAmount > 0) {
+    priceAfterOrder = order.value.price;
+    remainingAmount =
+      remainingAmount > order.value.size
+        ? remainingAmount - order.value.size
+        : 0;
+    order = orders.next();
+  }
+
+  const priceChange = Math.abs(initialPrice - priceAfterOrder);
+  const impact = (priceChange * 100) / initialPrice;
+  return impact;
+}
 // Fair price for a given market, as defined by the mid.
 export function useBbo(market?: PublicKey): Bbo | undefined {
   const orderbook = useOrderbook(market);
