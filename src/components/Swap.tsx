@@ -6,6 +6,7 @@ import {
   SystemProgram,
   Signer,
   SYSVAR_RENT_PUBKEY,
+  TransactionInstruction,
 } from "@solana/web3.js";
 import {
   u64,
@@ -24,7 +25,14 @@ import {
   useTheme,
 } from "@material-ui/core";
 import { ExpandMore, ImportExportRounded } from "@material-ui/icons";
-import { useCanCreateAccounts, useCanWrapOrUnwrap, useSwapContext, useSwapFair } from "../context/Swap";
+import {
+  useIsUnwrapSollet,
+  useCanCreateAccounts,
+  useCanWrapOrUnwrap,
+  useSwapContext,
+  useSwapFair,
+} from "../context/Swap";
+// import { useIsUnwrapSolletUsdt, useSwapContext, useSwapFair } from "../context/Swap";
 import {
   useDexContext,
   useRouteVerbose,
@@ -44,7 +52,13 @@ import { useCanSwap, useReferral, useIsWrapSol } from "../context/Swap";
 import TokenDialog from "./TokenDialog";
 import { SettingsButton } from "./Settings";
 import { InfoLabel } from "./Info";
-import { SOL_MINT, WRAPPED_SOL_MINT, DEX_PID } from "../utils/pubkeys";
+import {
+  SOL_MINT,
+  WRAPPED_SOL_MINT,
+  DEX_PID,
+  MEMO_PROGRAM_ID,
+  SOLLET_USDT_MINT,
+} from "../utils/pubkeys";
 import { getTokenAddrressAndCreateIx } from "../utils/tokens";
 
 const useStyles = makeStyles((theme) => ({
@@ -378,6 +392,7 @@ export function SwapButton() {
   const fair = useSwapFair();
 
   const { isWrapSol, isUnwrapSol } = useIsWrapSol(fromMint, toMint);
+  const isUnwrapSollet = useIsUnwrapSollet(fromMint, toMint);
 
   const fromOpenOrders = useMemo(() => {
     return fromMarket
@@ -391,11 +406,14 @@ export function SwapButton() {
 
   const disconnected = !swapClient.program.provider.wallet.publicKey;
 
-  const insufficientBalance = fromAmount * Math.pow(10, fromMintInfo?.decimals ?? 0)
-    > (fromWallet?.account.amount.toNumber() ?? 0);
+  const insufficientBalance =
+    fromAmount == 0 ||
+    fromAmount * Math.pow(10, fromMintInfo?.decimals ?? 0) >
+      (fromWallet?.account.amount.toNumber() ?? 0);
 
   const needsCreateAccounts =
-    !toWallet || !fromOpenOrders || (toMarket && !toOpenOrders);
+    !toWallet ||
+    (!isUnwrapSollet && (!fromOpenOrders || (toMarket && !toOpenOrders)));
 
   // Click handlers.
 
@@ -639,6 +657,64 @@ export function SwapButton() {
     await swapClient.program.provider.send(tx, signers);
   };
 
+  const sendUnwrapSolletTransaction = async () => {
+    interface SolletBody {
+      address: string;
+      blockchain: string;
+      coin: string;
+      size: number;
+      wusdtToUsdt?: boolean;
+      wusdcToUsdc?: boolean;
+    }
+    const solletReqBody: SolletBody = {
+      address: toWallet!.publicKey.toString(),
+      blockchain: "sol",
+      coin: toMint.toString(),
+      size: 1,
+    };
+    if (fromMint.equals(SOLLET_USDT_MINT)) {
+      solletReqBody.wusdtToUsdt = true;
+    } else {
+      solletReqBody.wusdcToUsdc = true;
+    }
+    const solletRes = await fetch("https://swap.sollet.io/api/swap_to", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(solletReqBody),
+    });
+
+    const { address: bridgeAddr, maxSize } = (await solletRes.json())
+      .result as {
+      address: string;
+      maxSize: number;
+    };
+
+    const tx = new Transaction();
+    const amount = new u64(fromAmount * 10 ** fromMintInfo!.decimals);
+    tx.add(
+      Token.createTransferInstruction(
+        TOKEN_PROGRAM_ID,
+        fromWallet!.publicKey,
+        new PublicKey(bridgeAddr),
+        swapClient.program.provider.wallet.publicKey,
+        [],
+        amount
+      )
+    );
+    tx.add(
+      new TransactionInstruction({
+        keys: [],
+        data: Buffer.from(toWallet!.publicKey.toString(), "utf-8"),
+        programId: MEMO_PROGRAM_ID,
+      })
+    );
+
+    await swapClient.program.provider.send(tx);
+  };
+
   const sendSwapTransaction = async () => {
     if (!fromMintInfo || !toMintInfo) {
       throw new Error("Unable to calculate mint decimals");
@@ -758,11 +834,7 @@ export function SwapButton() {
   }
 
   return !fromWallet || insufficientBalance ? (
-    <Button
-      variant="contained"
-      className={styles.swapButton}
-      disabled={true}
-    >
+    <Button variant="contained" className={styles.swapButton} disabled={true}>
       Insufficient balance
     </Button>
   ) : needsCreateAccounts ? (
@@ -791,6 +863,15 @@ export function SwapButton() {
       disabled={!canWrapOrUnwrap}
     >
       Unwrap SOL
+    </Button>
+  ) : isUnwrapSollet ? (
+    <Button
+      variant="contained"
+      className={styles.swapButton}
+      onClick={sendUnwrapSolletTransaction}
+      disabled={fromAmount <= 0}
+    >
+      Unwrap
     </Button>
   ) : (
     <Button

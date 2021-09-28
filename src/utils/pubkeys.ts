@@ -4,6 +4,10 @@ export const DEX_PID = new PublicKey(
   "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin"
 );
 
+export const MEMO_PROGRAM_ID = new PublicKey(
+  "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"
+);
+
 export const SRM_MINT = new PublicKey(
   "SRMuApVNdxXokk5GT7XD5cUUgXMBCoAz2LHeuAoKWRt"
 );
@@ -43,4 +47,12 @@ export const WORM_USDT_MINT = new PublicKey(
 
 export const WORM_USDT_MARKET = new PublicKey(
   "4v6e6vNXAaEunrvbqkYnKwbaWfck8a2KVR4uRAVXxVwC"
+);
+
+export const SOLLET_USDT_MINT = new PublicKey(
+  "BQcdHdAQW1hczDbBi9hiegXAR7A98Q9jx3X3iBBBDiq4"
+);
+
+export const SOLLET_USDC_MINT = new PublicKey(
+  "BXXkv6z8ykpG1yuvUDPgh732wzVHB69RnB9YgSYh3itW"
 );

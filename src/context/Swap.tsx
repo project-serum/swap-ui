@@ -14,6 +14,8 @@ import {
   USDT_MINT,
   SOL_MINT,
   WRAPPED_SOL_MINT,
+  SOLLET_USDT_MINT,
+  SOLLET_USDC_MINT,
 } from "../utils/pubkeys";
 import {
   useFairRoute,
@@ -233,7 +235,6 @@ export function useCanCreateAccounts(): boolean {
     fromMint.equals(toMint) === false &&
     // Wallet is connected.
     swapClient.program.provider.wallet.publicKey !== null &&
-
     // Trade route exists.
     route !== null &&
     // Wormhole <-> native markets must have the wormhole token as the
@@ -265,6 +266,16 @@ export function useCanWrapOrUnwrap(): boolean {
     // Trade amounts greater than zero.
     fromAmount > 0 &&
     toAmount > 0
+  );
+}
+
+export function useIsUnwrapSollet(
+  fromMint: PublicKey,
+  toMint: PublicKey
+): boolean {
+  return (
+    (fromMint.equals(SOLLET_USDT_MINT) && toMint.equals(USDT_MINT)) ||
+    (fromMint.equals(SOLLET_USDC_MINT) && toMint.equals(USDC_MINT))
   );
 }
 
