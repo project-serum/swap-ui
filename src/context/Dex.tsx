@@ -35,10 +35,11 @@ type DexContext = {
   // Maps market address to open orders accounts.
   openOrders: Map<string, Array<OpenOrders>>;
   closeOpenOrders: (openOrder: OpenOrders) => void;
+  addOpenOrderAccount: (market: PublicKey, accountData: OpenOrders) => void;
   swapClient: SwapClient;
   isLoaded: boolean;
 };
-const _DexContext = React.createContext<DexContext | null>(null);
+export const _DexContext = React.createContext<DexContext | null>(null);
 
 export function DexContextProvider(props: any) {
   const [ooAccounts, setOoAccounts] = useState<Map<string, Array<OpenOrders>>>(
@@ -59,6 +60,16 @@ export function DexContextProvider(props: any) {
       newOoAccounts.delete(openOrder.market.toString());
     }
     setOoAccounts(newOoAccounts);
+  };
+
+  const addOpenOrderAccount = async (
+    market: PublicKey,
+    accountData: OpenOrders
+  ) => {
+    const newOoAccounts = new Map(ooAccounts);
+    newOoAccounts.set(market.toString(), [accountData]);
+    setOoAccounts(newOoAccounts);
+    setIsLoaded(true);
   };
 
   // Three operations:
@@ -169,6 +180,7 @@ export function DexContextProvider(props: any) {
       value={{
         openOrders: ooAccounts,
         closeOpenOrders,
+        addOpenOrderAccount,
         swapClient,
         isLoaded,
       }}
