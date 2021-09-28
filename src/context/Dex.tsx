@@ -224,14 +224,16 @@ export function useMarket(market?: PublicKey): Market | undefined {
 export function useOrderbook(market?: PublicKey): Orderbook | undefined {
   const { swapClient } = useDexContext();
   const marketClient = useMarket(market);
-  const [refresh, setRefresh] = useState(0);
+  const [orderBookCache, setOrderBookCache] = useState(
+    new Map<string, Promise<Orderbook>>()
+  );
 
   const asyncOrderbook = useAsync(async () => {
     if (!market || !marketClient) {
       return undefined;
     }
-    if (_ORDERBOOK_CACHE.get(market.toString())) {
-      return _ORDERBOOK_CACHE.get(market.toString());
+    if (orderBookCache.get(market.toString())) {
+      return orderBookCache.get(market.toString());
     }
 
     const orderbook = new Promise<Orderbook>(async (resolve) => {
@@ -246,10 +248,12 @@ export function useOrderbook(market?: PublicKey): Orderbook | undefined {
       });
     });
 
-    _ORDERBOOK_CACHE.set(market.toString(), orderbook);
+    setOrderBookCache(
+      new Map(orderBookCache.set(market.toString(), orderbook))
+    );
 
     return orderbook;
-  }, [refresh, swapClient.program.provider.connection, market, marketClient]);
+  }, [swapClient.program.provider.connection, market, marketClient]);
 
   // Stream in bids updates.
   useEffect(() => {
@@ -259,7 +263,7 @@ export function useOrderbook(market?: PublicKey): Orderbook | undefined {
         marketClient?.bidsAddress,
         async (info) => {
           const bids = OrderbookSide.decode(marketClient, info.data);
-          const orderbook = await _ORDERBOOK_CACHE.get(
+          const orderbook = await orderBookCache.get(
             marketClient.address.toString()
           );
           const oldBestBid = orderbook?.bids.items(true).next().value;
@@ -270,8 +274,16 @@ export function useOrderbook(market?: PublicKey): Orderbook | undefined {
             newBestBid &&
             oldBestBid.price !== newBestBid.price
           ) {
-            orderbook.bids = bids;
-            setRefresh((r) => r + 1);
+            const oldAsks = orderbook.asks;
+            const newtemp: Promise<Orderbook> = Promise.resolve({
+              asks: oldAsks,
+              bids: bids,
+            });
+            setOrderBookCache(
+              new Map(
+                orderBookCache.set(marketClient.address.toString(), newtemp)
+              )
+            );
           }
         }
       );
@@ -297,7 +309,7 @@ export function useOrderbook(market?: PublicKey): Orderbook | undefined {
         marketClient?.asksAddress,
         async (info) => {
           const asks = OrderbookSide.decode(marketClient, info.data);
-          const orderbook = await _ORDERBOOK_CACHE.get(
+          const orderbook = await orderBookCache.get(
             marketClient.address.toString()
           );
           const oldBestOffer = orderbook?.asks.items(false).next().value;
@@ -308,8 +320,16 @@ export function useOrderbook(market?: PublicKey): Orderbook | undefined {
             newBestOffer &&
             oldBestOffer.price !== newBestOffer.price
           ) {
-            orderbook.asks = asks;
-            setRefresh((r) => r + 1);
+            const oldBids = orderbook.bids;
+            const newtemp: Promise<Orderbook> = Promise.resolve({
+              asks: asks,
+              bids: oldBids,
+            });
+            setOrderBookCache(
+              new Map(
+                orderBookCache.set(marketClient.address.toString(), newtemp)
+              )
+            );
           }
         }
       );
@@ -605,5 +625,4 @@ type Bbo = {
   mid?: number;
 };
 
-const _ORDERBOOK_CACHE = new Map<string, Promise<Orderbook>>();
 const _MARKET_CACHE = new Map<string, Promise<Market>>();
