@@ -24,6 +24,7 @@ import {
   useRouteVerbose,
   useMarket,
   FEE_MULTIPLIER,
+  useFairRoute,
 } from "../context/Dex";
 import { useTokenMap } from "../context/TokenList";
 import { useMint, useOwnedTokenAccount } from "../context/Token";
@@ -54,6 +55,10 @@ const useStyles = makeStyles((theme) => ({
     fontSize: 16,
     fontWeight: 700,
     padding: theme.spacing(1.5),
+    "&:disabled": {
+      cursor: "not-allowed",
+      pointerEvents: "all !important",
+    },
   },
   swapToFromButton: {
     display: "block",
@@ -324,6 +329,7 @@ export function SwapButton() {
     fromMint,
     toMint,
     fromAmount,
+    toAmount,
     slippage,
     isClosingNewAccounts,
     isStrict,
@@ -341,14 +347,59 @@ export function SwapButton() {
   );
   const canSwap = useCanSwap();
   const referral = useReferral(fromMarket);
-  const fair = useSwapFair();
+  const fair = useSwapFair() ?? 0;
   let fromWallet = useOwnedTokenAccount(fromMint);
   let toWallet = useOwnedTokenAccount(toMint);
-  const quoteMint = fromMarket && fromMarket.quoteMintAddress;
+  const quoteMint = (fromMarket && fromMarket.quoteMintAddress) as PublicKey;
   const quoteMintInfo = useMint(quoteMint);
   const quoteWallet = useOwnedTokenAccount(quoteMint);
 
-  // Click handler.
+  let minimumAmt = fromMarket?.minOrderSize ?? 0;
+  let baseMint = fromMarket?.decoded.baseMint ?? null;
+
+  let isMultiRoute: boolean = (route?.markets?.length ?? 0) > 1;
+
+  let minAmtCondt = false;
+  let minAmt = 0;
+  let fromMinOrder = fromMarket?.minOrderSize ?? 0;
+  let toMinOrder = toMarket?.minOrderSize ?? 0;
+  const quoteExchangeRate = useFairRoute(fromMint, quoteMint) ?? 0;
+  const toExchangeRate = useFairRoute(toMint, quoteMint) ?? 0;
+
+  if (isMultiRoute) {
+    if (quoteExchangeRate > 1 && toExchangeRate > 1) {
+      const toEffectiveAmount = fromAmount * (1 / fair);
+      minAmt =
+        fromMinOrder > toEffectiveAmount
+          ? fromMinOrder
+          : toMinOrder / (1 / fair);
+      minAmtCondt =
+        fromAmount >= fromMinOrder && toEffectiveAmount >= toMinOrder;
+    } else {
+      const quoteEffectiveAmount = fromAmount * (1 / quoteExchangeRate);
+      minAmt =
+        (toMinOrder * quoteExchangeRate) / toExchangeRate > fromMinOrder
+          ? (toMinOrder * quoteExchangeRate) / toExchangeRate
+          : fromMinOrder;
+      minAmtCondt =
+        fromAmount >= fromMinOrder &&
+        quoteEffectiveAmount * toExchangeRate >= toMinOrder;
+    }
+  } else {
+    if (baseMint?.toString() === fromMint.toString()) {
+      minAmt = minimumAmt;
+      minAmtCondt = fromAmount >= minimumAmt;
+    } else {
+      if (fair < 1) {
+        minAmt = minimumAmt;
+        minAmtCondt = fromAmount * (1 / fair) >= minimumAmt;
+      } else {
+        minAmt = minimumAmt * fair;
+        minAmtCondt = fromAmount >= minimumAmt * fair;
+      }
+    }
+  }
+
   const sendSwapTransaction = async () => {
     if (!fromMintInfo || !toMintInfo) {
       throw new Error("Unable to calculate mint decimals");
@@ -438,7 +489,6 @@ export function SwapButton() {
       txs[0].signers.push(...wrapSigners);
       txs[0].signers.push(...unwrapSigners);
     }
-
     await swapClient.program.provider.sendAll(txs);
   };
   return (
@@ -446,9 +496,10 @@ export function SwapButton() {
       variant="contained"
       className={styles.swapButton}
       onClick={sendSwapTransaction}
-      disabled={!canSwap}
+      disabled={!canSwap && !minAmtCondt}
     >
-      Swap
+      {(minAmtCondt && "Swap") ||
+        `Min ${Math.round(minAmt * 1e4) / 1e4} Required`}
     </Button>
   );
 }
