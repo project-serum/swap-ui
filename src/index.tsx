@@ -4,7 +4,7 @@ import { TokenListContainer } from "@solana/spl-token-registry";
 import { Provider } from "@project-serum/anchor";
 import { Swap as SwapClient } from "@project-serum/swap";
 import {
-  createMuiTheme,
+  createTheme,
   ThemeOptions,
   ThemeProvider,
 } from "@material-ui/core/styles";
@@ -61,7 +61,7 @@ export default function Swap(props: SwapProps): ReactElement {
 
   // @ts-ignore
   const swapClient = new SwapClient(provider, tokenList);
-  const theme = createMuiTheme(
+  const theme = createTheme(
     materialTheme || {
       palette: {
         primary: {
