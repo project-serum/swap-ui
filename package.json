@@ -1,13 +1,13 @@
 {
   "name": "@project-serum/swap-ui",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "homepage": "https://github.com/project-serum/swap-ui",
   "license": "Apache-2.0",
   "dependencies": {
     "@project-serum/serum": "^0.13.58",
-    "@project-serum/swap": "^0.1.0-alpha.34",
+    "@project-serum/swap": "^0.1.0-alpha.35",
     "@solana/spl-token": "^0.1.8"
   },
   "peerDependencies": {
@@ -42,7 +42,7 @@
     "@project-serum/anchor": "^0.14.0",
     "@project-serum/serum": "^0.13.58",
     "@project-serum/sol-wallet-adapter": "^0.2.5",
-    "@project-serum/swap": "^0.1.0-alpha.32",
+    "@project-serum/swap": "^0.1.0-alpha.35",
     "@solana/spl-token": "^0.1.8",
     "@solana/spl-token-registry": "^0.2.229",
     "@solana/web3.js": "^1.24.1",
