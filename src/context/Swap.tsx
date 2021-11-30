@@ -72,6 +72,13 @@ export type SwapContext = {
   setIsStrict: (isStrict: boolean) => void;
 
   setIsClosingNewAccounts: (b: boolean) => void;
+
+  // A button state to reverse denominator of prices. Eg. if swap show
+  // price of SOL/USDC, then show USDC/SOL price when reverse is true.
+  showReversePrices: boolean;
+  setShowReversePrices: (
+    b: boolean | ((prevState: boolean) => boolean)
+  ) => void;
 };
 const _SwapContext = React.createContext<null | SwapContext>(null);
 
@@ -80,6 +87,7 @@ export function SwapContextProvider(props: any) {
   const [toMint, setToMint] = useState(props.toMint ?? USDC_MINT);
   const [fromAmount, _setFromAmount] = useState(props.fromAmount ?? 0);
   const [toAmount, _setToAmount] = useState(props.toAmount ?? 0);
+  const [showReversePrices, setShowReversePrices] = useState(false);
   const [isClosingNewAccounts, setIsClosingNewAccounts] = useState(false);
   const [isStrict, setIsStrict] = useState(false);
   const [slippage, setSlippage] = useState(DEFAULT_SLIPPAGE_PERCENT);
@@ -146,6 +154,8 @@ export function SwapContextProvider(props: any) {
         setIsStrict,
         setIsClosingNewAccounts,
         referral,
+        showReversePrices,
+        setShowReversePrices,
       }}
     >
       {props.children}
@@ -164,6 +174,14 @@ export function useSwapContext(): SwapContext {
 export function useSwapFair(): number | undefined {
   const { fairOverride, fromMint, toMint } = useSwapContext();
   return _useSwapFair(fromMint, toMint, fairOverride);
+}
+
+// get reverse price for pair  (diff fn to prevent side-effects)
+export function getSwapFair(reversed: boolean = false): number | undefined {
+  const { fairOverride, fromMint, toMint } = useSwapContext();
+  return reversed
+    ? _useSwapFair(toMint, fromMint, fairOverride)
+    : _useSwapFair(fromMint, toMint, fairOverride);
 }
 
 function _useSwapFair(

@@ -5,11 +5,11 @@ import {
   Popover,
   IconButton,
 } from "@material-ui/core";
-import { Info } from "@material-ui/icons";
+import { Info, SwapHorizRounded } from "@material-ui/icons";
 import PopupState, { bindTrigger, bindPopover } from "material-ui-popup-state";
 import { PublicKey } from "@solana/web3.js";
 import { useTokenMap } from "../context/TokenList";
-import { useSwapContext, useSwapFair } from "../context/Swap";
+import { getSwapFair, useSwapContext, useSwapFair } from "../context/Swap";
 import { useMint } from "../context/Token";
 import { useRoute, useMarketName, useBbo } from "../context/Dex";
 
@@ -31,9 +31,11 @@ const useStyles = makeStyles(() => ({
 export function InfoLabel() {
   const styles = useStyles();
 
-  const { fromMint, toMint } = useSwapContext();
+  const { fromMint, toMint, showReversePrices, setShowReversePrices } =
+    useSwapContext();
   const fromMintInfo = useMint(fromMint);
-  const fair = useSwapFair();
+  const toMintInfo = useMint(toMint);
+  const fair = getSwapFair(showReversePrices);
 
   const tokenMap = useTokenMap();
   let fromTokenInfo = tokenMap.get(fromMint.toString());
@@ -41,11 +43,23 @@ export function InfoLabel() {
 
   return (
     <div className={styles.infoLabel}>
+      <IconButton
+        color={showReversePrices ? "primary" : "default"}
+        className={styles.infoButton}
+        onClick={() => setShowReversePrices((p: any) => !p)}
+      >
+        <SwapHorizRounded />
+      </IconButton>
+      &nbsp;
       <Typography color="textSecondary" style={{ fontSize: "14px" }}>
         {fair !== undefined && toTokenInfo && fromTokenInfo
-          ? `1 ${toTokenInfo.symbol} = ${fair.toFixed(
-              fromMintInfo?.decimals
-            )} ${fromTokenInfo.symbol}`
+          ? showReversePrices
+            ? `1 ${fromTokenInfo.symbol} = ${fair.toFixed(
+                toMintInfo?.decimals
+              )} ${toTokenInfo.symbol}`
+            : `1 ${toTokenInfo.symbol} = ${fair.toFixed(
+                fromMintInfo?.decimals
+              )} ${fromTokenInfo.symbol}`
           : `-`}
       </Typography>
       <InfoButton />
