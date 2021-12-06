@@ -11,7 +11,12 @@ import { PublicKey } from "@solana/web3.js";
 import { useTokenMap } from "../context/TokenList";
 import { useSwapContext, useSwapFair } from "../context/Swap";
 import { useMint } from "../context/Token";
-import { useRoute, useMarketName, useBbo } from "../context/Dex";
+import {
+  useRoute,
+  useMarketName,
+  useBbo,
+  usePriceImpact,
+} from "../context/Dex";
 
 const useStyles = makeStyles(() => ({
   infoLabel: {
@@ -39,21 +44,40 @@ export function InfoLabel() {
   let fromTokenInfo = tokenMap.get(fromMint.toString());
   let toTokenInfo = tokenMap.get(toMint.toString());
 
+  // Use last route item to find impact
+  const route = useRoute(fromMint, toMint);
+  const impact = usePriceImpact(route?.at(-1));
+
   return (
-    <div className={styles.infoLabel}>
-      <Typography color="textSecondary" style={{ fontSize: "14px" }}>
-        {fair !== undefined && toTokenInfo && fromTokenInfo
-          ? `1 ${toTokenInfo.symbol} = ${fair.toFixed(
-              fromMintInfo?.decimals
-            )} ${fromTokenInfo.symbol}`
-          : `-`}
-      </Typography>
-      <InfoButton />
-    </div>
+    <>
+      <div className={styles.infoLabel}>
+        <Typography color="textSecondary" style={{ fontSize: "14px" }}>
+          {fair !== undefined && toTokenInfo && fromTokenInfo
+            ? `1 ${toTokenInfo.symbol} = ${fair.toFixed(
+                fromMintInfo?.decimals
+              )} ${fromTokenInfo.symbol}`
+            : `-`}
+        </Typography>
+        <InfoButton route={route} />
+      </div>
+
+      <div className={styles.infoLabel}>
+        <Typography color="textSecondary" style={{ fontSize: "14px" }}>
+          Price impact:&nbsp;
+        </Typography>
+        <Typography
+          style={{ fontSize: "14px", fontWeight: 500 }}
+          display="inline"
+          color={(impact ?? 0) > 10 ? "error" : "primary"}
+        >
+          {impact?.toFixed(2)}%
+        </Typography>
+      </div>
+    </>
   );
 }
 
-function InfoButton() {
+function InfoButton({ route }: { route: PublicKey[] | null }) {
   const styles = useStyles();
   return (
     <PopupState variant="popover">
@@ -80,7 +104,7 @@ function InfoButton() {
               PaperProps={{ style: { borderRadius: "10px" } }}
               disableRestoreFocus
             >
-              <InfoDetails />
+              <InfoDetails route={route} />
             </Popover>
           </div>
         )
@@ -89,9 +113,8 @@ function InfoButton() {
   );
 }
 
-function InfoDetails() {
+function InfoDetails({ route }: { route: PublicKey[] | null }) {
   const { fromMint, toMint } = useSwapContext();
-  const route = useRoute(fromMint, toMint);
   const tokenMap = useTokenMap();
   const fromMintTicker = tokenMap.get(fromMint.toString())?.symbol;
   const toMintTicker = tokenMap.get(toMint.toString())?.symbol;
